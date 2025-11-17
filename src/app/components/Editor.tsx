@@ -10,8 +10,16 @@ import TableRect from "./TableRect";
 import DrawSquareButton from "./DrawSquareButton";
 
 export default function Editor() {
+  // Ref to the container div to measure size, for dynamic Stage sizing
   const containerRef = useRef<HTMLDivElement | null>(null);
+
+  // Ref to the Konva Stage instance
+  const stageRef = useRef<Konva.Stage | null>(null);
+
+  // Sets the size of the Stage based on container size
   const [stageSize, setStageSize] = useState({ width: 300, height: 150 });
+
+  // Holds the list of tables in the editor
   const [tables, setTables] = useState<Table[]>(() => [
     // Default tables for testing
     createTable({ id: "T1", label: "T1", x: 20, y: 20, capacity: 4 }),
@@ -20,14 +28,13 @@ export default function Editor() {
 
   // Holds the ID of the currently selected table
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const stageRef = useRef<Konva.Stage | null>(null);
 
-  // drawing state
+  // Drawing state
   const [drawMode, setDrawMode] = useState(false);
   const isDrawingRef = useRef(false);
   const drawStartRef = useRef<{ x: number; y: number } | null>(null);
 
-  // preview: imperative Konva rect + layer for batchDraw
+  // Preview: imperative Konva rect + layer for batchDraw
   const layerRef = useRef<Konva.Layer | null>(null);
   const previewRectRef = useRef<Konva.Rect | null>(null);
 
@@ -64,13 +71,14 @@ export default function Editor() {
     };
   }, []);
 
+  // Set the position of a table after drag end
   const handleDragEnd = (id: string, x: number, y: number) => {
-    // simple move: update position directly
     setTables((prevTables) =>
       prevTables.map((t) => (t.id === id ? { ...t, x, y } : t))
     );
   };
 
+  // Toggle drawing mode on/off
   const toggleDrawMode = () => {
     setDrawMode((v) => !v);
     isDrawingRef.current = false;
@@ -83,6 +91,7 @@ export default function Editor() {
     }
   };
 
+  // Handlers for stage mouse events to implement drawing new tables
   const handleStageMouseDown = () => {
     if (!drawMode) return;
 
@@ -160,7 +169,6 @@ export default function Editor() {
 
     previewRect.visible(false);
     previewRect.getLayer()?.batchDraw();
-    // keep drawMode on to allow multiple draws
   };
 
   return (
@@ -200,8 +208,7 @@ export default function Editor() {
             {/* Preview rectangle: always rendered but hidden until used. */}
             <Rect
               ref={(node) => {
-                // react-konva gives Konva.Rect | null
-                previewRectRef.current = node as Konva.Rect | null;
+                previewRectRef.current = node;
               }}
               x={0}
               y={0}
