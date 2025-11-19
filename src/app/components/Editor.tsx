@@ -183,15 +183,28 @@ export default function Editor() {
 
   // Handlers for stage mouse events to implement drawing new tables and lines
   const handleStageMouseDown = (e: Konva.KonvaEventObject<MouseEvent>) => {
-    // If clicking on a shape, don't start drawing
-    if (e.target !== e.target.getStage()) {
-      return;
-    }
-
+    // Check if we're in a drawing mode
     if (!tableDrawMode && !lineDrawMode) {
+      // If clicking on a shape that's not the stage, don't deselect
+      if (e.target !== e.target.getStage()) {
+        return;
+      }
       // Deselect when clicking on empty canvas
       setSelectedId(null);
       return;
+    }
+
+    // In drawing mode, only prevent drawing if clicking on draggable/interactive shapes (tables)
+    // Allow drawing when clicking on lines or snap indicators
+    if (e.target !== e.target.getStage()) {
+      const targetName = e.target.name();
+      const targetParent = e.target.parent;
+
+      // Don't start drawing if clicking on a table or its children
+      if (targetName === "table" || targetParent?.name?.() === "table") {
+        return;
+      }
+      // For line mode, allow clicking on lines and snap indicators to start drawing
     }
 
     const pointer = stageRef.current?.getPointerPosition?.();

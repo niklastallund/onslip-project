@@ -21,6 +21,7 @@ export default function TableRect({
 
   return (
     <Group
+      name="table"
       x={table.x}
       y={table.y}
       draggable
