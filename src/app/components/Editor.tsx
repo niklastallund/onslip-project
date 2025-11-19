@@ -5,10 +5,14 @@ import { Stage, Layer, Rect, Line, Circle } from "react-konva";
 import Konva from "konva";
 import type { Table } from "../../types/table";
 import { createTable } from "../../types/table";
+import type { Line as LineType } from "../../types/line";
+import { createLine } from "../../types/line";
 import { getNextTableId } from "../../lib/tableHelpers";
+import { findNearestEndpoint } from "../../lib/lineHelpers";
 import TableRect from "./TableRect";
 import DrawSquareButton from "./DrawSquareButton";
 import DrawLineButton from "./DrawLineButton";
+import EditableLine from "./EditableLine";
 
 export default function Editor() {
   // Ref to the container div to measure size, for dynamic Stage sizing
@@ -27,12 +31,11 @@ export default function Editor() {
     createTable({ id: "T2", label: "T2", x: 200, y: 40, capacity: 2 }),
   ]);
 
-  // Holds the ID of the currently selected table
+  // Holds the ID of the currently selected item (table or line)
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   // Holds the list of lines drawn in the editor
-  type DrawnLine = { id: string; points: number[] };
-  const [lines, setLines] = useState<DrawnLine[]>([]);
+  const [lines, setLines] = useState<LineType[]>([]);
 
   // Drawing state
   const [tableDrawMode, setTableDrawMode] = useState(false);
@@ -92,39 +95,30 @@ export default function Editor() {
     );
   };
 
-  // Helper function to find the nearest line endpoint within snap threshold
-  const findNearestEndpoint = (
-    x: number,
-    y: number
-  ): { x: number; y: number } | null => {
-    let nearestPoint: { x: number; y: number } | null = null;
-    let minDistance = SNAP_THRESHOLD;
+  // Update line points
+  const handleLineUpdate = (id: string, points: number[]) => {
+    setLines((prevLines) =>
+      prevLines.map((line) => (line.id === id ? { ...line, points } : line))
+    );
+  };
 
-    lines.forEach((line) => {
-      const points = line.points;
-      // Check start point (first two values)
-      if (points.length >= 2) {
-        const startX = points[0];
-        const startY = points[1];
-        const distStart = Math.sqrt((x - startX) ** 2 + (y - startY) ** 2);
-        if (distStart < minDistance) {
-          minDistance = distStart;
-          nearestPoint = { x: startX, y: startY };
-        }
+  // Control snap indicator visibility
+  const handleSnapIndicator = (show: boolean, x?: number, y?: number) => {
+    if (show && x !== undefined && y !== undefined) {
+      if (snapIndicatorEndRef.current) {
+        snapIndicatorEndRef.current.setAttrs({
+          x,
+          y,
+          visible: true,
+        });
+        snapIndicatorEndRef.current.getLayer()?.batchDraw();
       }
-      // Check end point (last two values)
-      if (points.length >= 4) {
-        const endX = points[points.length - 2];
-        const endY = points[points.length - 1];
-        const distEnd = Math.sqrt((x - endX) ** 2 + (y - endY) ** 2);
-        if (distEnd < minDistance) {
-          minDistance = distEnd;
-          nearestPoint = { x: endX, y: endY };
-        }
+    } else {
+      if (snapIndicatorEndRef.current) {
+        snapIndicatorEndRef.current.visible(false);
+        snapIndicatorEndRef.current.getLayer()?.batchDraw();
       }
-    });
-
-    return nearestPoint;
+    }
   };
 
   // Toggle drawing mode on/off
@@ -187,9 +181,18 @@ export default function Editor() {
     }
   };
 
-  // Handlers for stage mouse events to implement drawing new tables
-  const handleStageMouseDown = () => {
-    if (!tableDrawMode && !lineDrawMode) return;
+  // Handlers for stage mouse events to implement drawing new tables and lines
+  const handleStageMouseDown = (e: Konva.KonvaEventObject<MouseEvent>) => {
+    // If clicking on a shape, don't start drawing
+    if (e.target !== e.target.getStage()) {
+      return;
+    }
+
+    if (!tableDrawMode && !lineDrawMode) {
+      // Deselect when clicking on empty canvas
+      setSelectedId(null);
+      return;
+    }
 
     const pointer = stageRef.current?.getPointerPosition?.();
     if (!pointer) return;
@@ -199,7 +202,12 @@ export default function Editor() {
     // For line mode, snap to nearest endpoint if close enough
     let startPoint = { x: pointer.x, y: pointer.y };
     if (lineDrawMode) {
-      const snapPoint = findNearestEndpoint(pointer.x, pointer.y);
+      const snapPoint = findNearestEndpoint(
+        pointer.x,
+        pointer.y,
+        lines,
+        SNAP_THRESHOLD
+      );
       if (snapPoint) {
         startPoint = snapPoint;
         // Show snap indicator at start point
@@ -268,7 +276,12 @@ export default function Editor() {
 
       // Check for snap to endpoint
       let endPoint = { x: pointer.x, y: pointer.y };
-      const snapPoint = findNearestEndpoint(pointer.x, pointer.y);
+      const snapPoint = findNearestEndpoint(
+        pointer.x,
+        pointer.y,
+        lines,
+        SNAP_THRESHOLD
+      );
 
       if (snapPoint) {
         endPoint = snapPoint;
@@ -373,10 +386,10 @@ export default function Editor() {
         return;
       }
 
-      const newLine: DrawnLine = {
+      const newLine = createLine({
         id: `line-${Date.now()}`,
         points: points.map(Math.round),
-      };
+      });
       setLines((prevLines) => [...prevLines, newLine]);
 
       previewLine.visible(false);
@@ -432,15 +445,17 @@ export default function Editor() {
               />
             ))}
 
-            {/* Render completed lines */}
+            {/* Render completed lines with selection and transformation */}
             {lines.map((line) => (
-              <Line
+              <EditableLine
                 key={line.id}
-                points={line.points}
-                stroke="grey"
-                strokeWidth={3}
-                lineCap="round"
-                lineJoin="round"
+                line={line}
+                isSelected={selectedId === line.id}
+                allLines={lines}
+                snapThreshold={SNAP_THRESHOLD}
+                onSelect={setSelectedId}
+                onUpdate={handleLineUpdate}
+                onSnapIndicator={handleSnapIndicator}
               />
             ))}
 
