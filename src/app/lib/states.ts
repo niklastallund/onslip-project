@@ -4,8 +4,12 @@
  * addStates() Push the states to the server
  * getStates() Fetch the states from the server
  */
+"use server";
 
-import { API } from "@onslip/onslip-360-node-api";
+import { API, nodeRequestHandler } from "@onslip/onslip-360-node-api";
+
+// Initialize the API with a request handler
+API.initialize(nodeRequestHandler({ userAgent: "onslip-project/1.0.0" }));
 
 // Some dummy states for testing
 const states = [
@@ -66,9 +70,9 @@ export async function createTableStates(newStates?: string[]) {
       });
       console.log("Label Added:", label);
     }
-
-    createConfigResource();
   });
+
+  await createConfigResource();
 
   const labelStates = await api.listLabels(`label-category:${labelCategoryId}`);
 
@@ -81,14 +85,14 @@ export async function createConfigResource() {
   let locationId: number;
 
   const existingLocation = locations.find(
-    (loc) => loc.name === "Table States Location"
+    (loc) => loc.name === "table-states-location"
   );
 
   if (existingLocation) {
     console.log("Location already exists:", existingLocation);
     locationId = existingLocation.id;
   } else {
-    const location = await api.addLocation({ name: "Table States Location" });
+    const location = await api.addLocation({ name: "table-states-location" });
     console.log("Location created:", location);
     locationId = location.id;
   }
@@ -102,16 +106,88 @@ export async function createConfigResource() {
     return;
   }
 
-  const labels = await api.listLabels(`label-category:${labelStates[0].id}`);
+  addResourceStates(states);
 
-  const existingResources = await api.listResources();
-  console.log(existingResources);
+  console.log("Current resources: ", await api.listResources());
+}
 
-  // const configResource = await api.addResource({
-  //   location: locationId,
-  //   name: "Table States Resource",
-  //   labels: labels.map((label) => label.id),
-  // });
+async function addResourceStates(newStates: string[]) {
+  const targetResourceName = "table-states-resource";
+  const resources = await api.listResources();
+  const labelCategories = await api.listLabelCategories("table-states");
 
-  // console.log("Created resource: ", await api.getResource(configResource.id));
+  if (labelCategories.length === 0) {
+    console.error("Label category 'table-states' does not exist.");
+    return;
+  }
+
+  const labels = await api.listLabels(
+    `label-category:${labelCategories[0].id}`
+  );
+
+  // Try to update existing resource
+  const existing = resources.find((r) => r.name === targetResourceName);
+  if (existing) {
+    const updatedResource = await api.updateResource(existing.id, {
+      labels: labels.map((label) => label.id),
+    });
+    console.log("Updated Resource:", updatedResource);
+    return;
+  }
+
+  // Ensure location exists
+  const locations = await api.listLocations();
+  let locationId: number;
+  const existingLocation = locations.find(
+    (loc) => loc.name === "table-states-location"
+  );
+
+  if (existingLocation) {
+    locationId = existingLocation.id;
+  } else {
+    const location = await api.addLocation({ name: "table-states-location" });
+    locationId = location.id;
+    console.log("Location created:", location);
+  }
+
+  // Create new resource
+  const newResource = await api.addResource({
+    location: locationId,
+    name: targetResourceName,
+    labels: labels.map((label) => label.id),
+  });
+  console.log("Created Resource:", newResource);
+}
+
+export async function deleteTableResources() {
+  const resources = await api.listResources();
+
+  for (const resource of resources) {
+    await api.removeResource(resource.id);
+    console.log(`Deleted Resource: ${resource.name}`);
+  }
+}
+
+export async function getTableStates(): Promise<string[]> {
+  const resources = await api.listResources();
+  const targetResource = resources.find(
+    (res) => res.name === "table-states-resource"
+  );
+
+  if (!targetResource || !targetResource.labels) {
+    console.error("Table states resource not found.");
+    return [];
+  }
+
+  // Fetch label names for the resource's labels
+  const stateNames = await Promise.all(
+    targetResource.labels.map(async (labelId) => {
+      const label = await api.getLabel(labelId);
+      return label.name;
+    })
+  );
+
+  console.log("Table States:", stateNames);
+
+  return stateNames;
 }
