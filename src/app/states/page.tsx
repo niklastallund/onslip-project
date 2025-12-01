@@ -32,11 +32,11 @@ export default function PageState() {
   }
 
   async function handleNextState() {
-    await setNextOrderState(2);
+    await setNextOrderState(3);
   }
 
   async function handlePrevState() {
-    await setPreviousOrderState(2);
+    await setPreviousOrderState(3);
   }
 
   return (

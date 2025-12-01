@@ -7,16 +7,16 @@ API.initialize(nodeRequestHandler({ userAgent: "onslip-project/1.0.0" }));
 
 // Some dummy states for testing
 const states = [
-  "ready",
-  "guest_arrived",
-  "drinks_ordered",
-  "drinks_served",
-  "food_ordered",
-  "food_served",
-  "bill_requested",
-  "paid",
-  "uncleaned",
-  "cleaned",
+  "1:ready",
+  "2:guest_arrived",
+  "3:drinks_ordered",
+  "4:drinks_served",
+  "5:food_ordered",
+  "6:food_served",
+  "7:bill_requested",
+  "8:paid",
+  "9:uncleaned",
+  "10:cleaned",
 ];
 
 const api = new API(
@@ -170,6 +170,13 @@ export async function getTableStates(): Promise<string[]> {
     })
   );
 
+  // Sort states by their order prefix (e.g., "1:ready", "2:guest_arrived")
+  stateNames.sort((a, b) => {
+    const orderA = parseInt(a.split(":")[0]);
+    const orderB = parseInt(b.split(":")[0]);
+    return orderA - orderB;
+  });
+
   console.log(stateNames);
 
   return stateNames;
@@ -240,10 +247,7 @@ async function updateStateResource(
 }
 
 // Helper function to change order state in a given direction
-async function changeOrderState(
-  orderId: number,
-  direction: "next" | "prev"
-) {
+async function changeOrderState(orderId: number, direction: "next" | "prev") {
   const order = await api.getOrder(orderId);
 
   if (!order || !order.resources || order.resources.length === 0) {
@@ -262,8 +266,10 @@ async function changeOrderState(
   for (const resourceId of order.resources) {
     const resource = await api.getResource(resourceId);
     if (resource.name.startsWith(`order-${orderId}-state:`)) {
-      // Extract the current state from the resource name
-      const currentState = resource.name.split(":")[1];
+      // Extract the current state from the resource name (everything after "order-X-state:")
+      const currentState = resource.name.substring(
+        `order-${orderId}-state:`.length
+      );
 
       let newState: string;
       if (currentState === "null") {
