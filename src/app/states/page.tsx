@@ -7,6 +7,7 @@ import {
   getLocations,
   getTableStates,
   setNextOrderState,
+  setPreviousOrderState,
 } from "../lib/states";
 
 export default function PageState() {
@@ -34,6 +35,10 @@ export default function PageState() {
     await setNextOrderState(2);
   }
 
+  async function handlePrevState() {
+    await setPreviousOrderState(2);
+  }
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen">
       <button onClick={handleClick}>Create Table States</button>
@@ -47,6 +52,8 @@ export default function PageState() {
       <button onClick={handleCreateOrder}>Create Order Test</button>
       <h1>---------------------------------</h1>
       <button onClick={handleNextState}>Next State Test</button>
+      <h1>---------------------------------</h1>
+      <button onClick={handlePrevState}>Previous State Test</button>
     </div>
   );
 }

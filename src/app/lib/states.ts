@@ -27,12 +27,6 @@ const api = new API(
 );
 
 export async function createTableStates(newStates?: string[]) {
-  const client = await api.getClientInfo();
-  console.log("Client Info:", client);
-
-  const listLocations = await api.listLocations();
-  console.log("Locations:", listLocations);
-
   const listLabelCategories = await api.listLabelCategories();
   let labelCategoryId: number;
 
@@ -76,7 +70,6 @@ export async function createTableStates(newStates?: string[]) {
 export async function createConfigResource() {
   const locations = await api.listLocations();
   console.log("Locations:", locations);
-  let locationId: number;
 
   const existingLocation = locations.find(
     (loc) => loc.name === "table-states-location"
@@ -84,11 +77,9 @@ export async function createConfigResource() {
 
   if (existingLocation) {
     console.log("Location already exists:", existingLocation);
-    locationId = existingLocation.id;
   } else {
     const location = await api.addLocation({ name: "table-states-location" });
     console.log("Location created:", location);
-    locationId = location.id;
   }
 
   const labelStates = await api.listLabelCategories("table-states");
@@ -179,7 +170,7 @@ export async function getTableStates(): Promise<string[]> {
     })
   );
 
-  console.log("Table States:", stateNames);
+  console.log(stateNames);
 
   return stateNames;
 }
@@ -248,8 +239,11 @@ async function updateStateResource(
   console.log("Updated State Resource:", updatedResource);
 }
 
-// Fetches the current state of the order and sets it to the next state in the list
-export async function setNextOrderState(orderId: number) {
+// Helper function to change order state in a given direction
+async function changeOrderState(
+  orderId: number,
+  direction: "next" | "prev"
+) {
   const order = await api.getOrder(orderId);
 
   if (!order || !order.resources || order.resources.length === 0) {
@@ -258,6 +252,7 @@ export async function setNextOrderState(orderId: number) {
   }
 
   const currentStates = await getTableStates();
+  console.log("Table States:", currentStates);
 
   if (currentStates.length === 0) {
     console.error("No table states available to set.");
@@ -270,9 +265,12 @@ export async function setNextOrderState(orderId: number) {
       // Extract the current state from the resource name
       const currentState = resource.name.split(":")[1];
 
-      let nextState: string;
+      let newState: string;
       if (currentState === "null") {
-        nextState = currentStates[0];
+        newState =
+          direction === "next"
+            ? currentStates[0]
+            : currentStates[currentStates.length - 1];
       } else {
         const currentIndex = currentStates.indexOf(currentState);
 
@@ -281,19 +279,37 @@ export async function setNextOrderState(orderId: number) {
           continue;
         }
 
-        // If at last state, jump to first; otherwise, go to next
-        nextState =
-          currentIndex === currentStates.length - 1
-            ? currentStates[0]
-            : currentStates[currentIndex + 1];
+        if (direction === "next") {
+          // If at last state, jump to first; otherwise, go to next
+          newState =
+            currentIndex === currentStates.length - 1
+              ? currentStates[0]
+              : currentStates[currentIndex + 1];
+        } else {
+          // If at first state, jump to last; otherwise, go to previous
+          newState =
+            currentIndex === 0
+              ? currentStates[currentStates.length - 1]
+              : currentStates[currentIndex - 1];
+        }
       }
 
-      await updateStateResource(orderId, resourceId, nextState);
+      await updateStateResource(orderId, resourceId, newState);
       console.log(
-        `Order ${orderId} state changed from "${currentState}" to "${nextState}"`
+        `Order ${orderId} state changed from "${currentState}" to "${newState}"`
       );
     }
   }
+}
+
+// Fetches the current state of the order and sets it to the next state in the list
+export async function setNextOrderState(orderId: number) {
+  await changeOrderState(orderId, "next");
+}
+
+// Fetches the current state of the order and sets it to the previous state in the list
+export async function setPreviousOrderState(orderId: number) {
+  await changeOrderState(orderId, "prev");
 }
 
 export async function getLocations() {
