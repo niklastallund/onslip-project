@@ -212,13 +212,12 @@ export async function listOrders() {
 
   console.log("Active Orders:", activeOrders);
 
-  // If you want to process resources for each active order:
-  // activeOrders.forEach((order) => {
-  //   order.resources?.forEach(async (resourceId) => {
-  //     const resource = await api.getResource(resourceId);
-  //     console.log(`Resource in order ${order.id}:`, resource);
-  //   });
-  // });
+  activeOrders.forEach((order) => {
+    order.resources?.forEach(async (resourceId) => {
+      const resource = await api.getResource(resourceId);
+      console.log(`Resource in order ${order.id}:`, resource);
+    });
+  });
 }
 
 // Deletes an order and its associated resources

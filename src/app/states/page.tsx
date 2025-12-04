@@ -17,7 +17,7 @@ export default function PageState() {
   }
 
   async function handleDelete() {
-    await deleteOrder(5);
+    await deleteOrder(3);
   }
 
   async function handleGetStates() {
