@@ -2,7 +2,7 @@
 
 import { Line, Circle, Group } from "react-konva";
 import Konva from "konva";
-import type { Line as LineType } from "../../types/line";
+import type { Line as LineType } from "../types/line";
 
 interface EditableLineProps {
   line: LineType;

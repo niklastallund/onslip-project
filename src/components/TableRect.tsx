@@ -1,7 +1,7 @@
 "use client";
 
 import { Group, Rect, Text } from "react-konva";
-import type { Table } from "../../types/table";
+import type { Table } from "../types/table";
 
 type Props = {
   table: Table;

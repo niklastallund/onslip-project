@@ -3,12 +3,12 @@
 import { useEffect, useRef, useState } from "react";
 import { Stage, Layer, Rect, Line, Circle } from "react-konva";
 import Konva from "konva";
-import type { Table } from "../../types/table";
-import { createTable } from "../../types/table";
-import type { Line as LineType } from "../../types/line";
-import { createLine } from "../../types/line";
-import { getNextTableId } from "../../lib/tableHelpers";
-import { findNearestEndpoint } from "../../lib/lineHelpers";
+import type { Table } from "../types/table";
+import { createTable } from "../types/table";
+import type { Line as LineType } from "../types/line";
+import { createLine } from "../types/line";
+import { getNextTableId } from "../lib/tableHelpers";
+import { findNearestEndpoint } from "../lib/lineHelpers";
 import TableRect from "./TableRect";
 import DrawSquareButton from "./DrawSquareButton";
 import DrawLineButton from "./DrawLineButton";
@@ -422,7 +422,10 @@ export default function Editor() {
   };
 
   // Handle import from ExportImportButtons component
-  const handleImport = (canvasState: { tables: Table[]; lines: LineType[] }) => {
+  const handleImport = (canvasState: {
+    tables: Table[];
+    lines: LineType[];
+  }) => {
     setTables(canvasState.tables);
     setLines(canvasState.lines);
     setSelectedId(null);

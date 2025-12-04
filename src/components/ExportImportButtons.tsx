@@ -1,7 +1,7 @@
 "use client";
 
-import type { Table } from "../../types/table";
-import type { Line } from "../../types/line";
+import type { Table } from "../types/table";
+import type { Line } from "../types/line";
 
 interface CanvasState {
   version: string;
