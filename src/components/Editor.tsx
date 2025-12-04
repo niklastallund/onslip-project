@@ -14,6 +14,14 @@ import DrawSquareButton from "./DrawSquareButton";
 import DrawLineButton from "./DrawLineButton";
 import EditableLine from "./EditableLine";
 import ExportImportButtons from "./ExportImportButtons";
+import TableStateControls from "./TableStateControls";
+import {
+  createOrder,
+  setNextOrderState,
+  setPreviousOrderState,
+  getLocations,
+  getOrderState,
+} from "../app/lib/states";
 
 export default function Editor() {
   // Ref to the container div to measure size, for dynamic Stage sizing
@@ -35,8 +43,30 @@ export default function Editor() {
   // Holds the ID of the currently selected item (table or line)
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
+  // State for managing table orders and states
+  const [locationId, setLocationId] = useState<number | null>(null);
+  const [isStateLoading, setIsStateLoading] = useState(false);
+
   // Holds the list of lines drawn in the editor
   const [lines, setLines] = useState<LineType[]>([]);
+
+  // Fetch location on mount
+  useEffect(() => {
+    async function fetchLocation() {
+      try {
+        const locations = await getLocations();
+        const targetLocation = locations.find(
+          (loc) => loc.name === "table-states-location"
+        );
+        if (targetLocation) {
+          setLocationId(targetLocation.id);
+        }
+      } catch (error) {
+        console.error("Error fetching location:", error);
+      }
+    }
+    fetchLocation();
+  }, []);
 
   // Drawing state
   const [tableDrawMode, setTableDrawMode] = useState(false);
@@ -102,6 +132,33 @@ export default function Editor() {
       prevLines.map((line) => (line.id === id ? { ...line, points } : line))
     );
   };
+
+  // Handle keyboard events for delete
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.key === "Delete" || e.key === "Backspace") && selectedId) {
+        // Prevent default backspace navigation
+        e.preventDefault();
+
+        // Check if it's a table
+        const isTable = tables.some((t) => t.id === selectedId);
+        if (isTable) {
+          setTables((prevTables) =>
+            prevTables.filter((t) => t.id !== selectedId)
+          );
+        } else {
+          // Otherwise, it's a line
+          setLines((prevLines) => prevLines.filter((l) => l.id !== selectedId));
+        }
+        setSelectedId(null);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [selectedId, tables, lines]);
 
   // Control snap indicator visibility
   const handleSnapIndicator = (show: boolean, x?: number, y?: number) => {
@@ -437,6 +494,90 @@ export default function Editor() {
     drawStartRef.current = null;
   };
 
+  // Initialize an order for a table when selected
+  const initializeTableOrder = async (tableId: string) => {
+    if (!locationId) {
+      console.error("Location not available");
+      return;
+    }
+
+    const table = tables.find((t) => t.id === tableId);
+    if (!table || table.orderId) {
+      return; // Already has an order
+    }
+
+    try {
+      const orderId = await createOrder(table.label || tableId, locationId);
+      setTables((prevTables) =>
+        prevTables.map((t) =>
+          t.id === tableId ? { ...t, orderId, currentState: "null" } : t
+        )
+      );
+    } catch (error) {
+      console.error("Error creating order:", error);
+    }
+  };
+
+  // Handle state change (next or previous)
+  const handleStateChange = async (direction: "next" | "prev") => {
+    if (!selectedId) return;
+
+    const table = tables.find((t) => t.id === selectedId);
+    if (!table || !table.orderId) {
+      // Initialize order if not exists
+      await initializeTableOrder(selectedId);
+      return;
+    }
+
+    setIsStateLoading(true);
+    try {
+      if (direction === "next") {
+        await setNextOrderState(table.orderId);
+      } else {
+        await setPreviousOrderState(table.orderId);
+      }
+
+      // Fetch updated state from the server
+      await refreshTableState(selectedId);
+    } catch (error) {
+      console.error("Error changing state:", error);
+    } finally {
+      setIsStateLoading(false);
+    }
+  };
+
+  // Refresh a table's state from the server
+  const refreshTableState = async (tableId: string) => {
+    const table = tables.find((t) => t.id === tableId);
+    if (!table || !table.orderId) return;
+
+    try {
+      const currentState = await getOrderState(table.orderId);
+      setTables((prevTables) =>
+        prevTables.map((t) =>
+          t.id === tableId
+            ? { ...t, currentState: currentState || undefined }
+            : t
+        )
+      );
+    } catch (error) {
+      console.error("Error refreshing state:", error);
+    }
+  };
+
+  // Get selected table for state controls
+  const selectedTable = selectedId
+    ? tables.find((t) => t.id === selectedId)
+    : null;
+
+  // Initialize order when a table is selected for the first time
+  useEffect(() => {
+    if (selectedTable && !selectedTable.orderId && locationId) {
+      initializeTableOrder(selectedTable.id);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedTable?.id, locationId]);
+
   return (
     <div className="p-4">
       <div className="mb-2 flex items-center gap-3">
@@ -445,6 +586,27 @@ export default function Editor() {
           isDrawing={lineDrawMode}
           onToggle={toggleLineDrawMode}
         />
+        <button
+          onClick={() => {
+            if (!selectedId) return;
+            const isTable = tables.some((t) => t.id === selectedId);
+            if (isTable) {
+              setTables((prevTables) =>
+                prevTables.filter((t) => t.id !== selectedId)
+              );
+            } else {
+              setLines((prevLines) =>
+                prevLines.filter((l) => l.id !== selectedId)
+              );
+            }
+            setSelectedId(null);
+          }}
+          disabled={!selectedId}
+          className="px-3 py-1.5 text-sm font-medium text-white bg-red-500 rounded-md hover:bg-red-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+          title="Delete selected item (Delete/Backspace)"
+        >
+          Delete
+        </button>
         <span className="ml-3 text-sm text-gray-600">
           Selected: {selectedId ?? "—"}
         </span>
@@ -458,7 +620,7 @@ export default function Editor() {
 
       <div
         ref={containerRef}
-        className="w-full h-[420px] border border-gray-300"
+        className="w-[1200px] h-[600px] border border-gray-300"
       >
         {/* Stage requires explicit pixel width/height; we compute them from parent */}
         <Stage
@@ -556,6 +718,17 @@ export default function Editor() {
           </Layer>
         </Stage>
       </div>
+
+      {/* State controls appear when a table is selected */}
+      {selectedTable && (
+        <TableStateControls
+          tableName={selectedTable.label || selectedTable.id}
+          currentState={selectedTable.currentState || null}
+          onPreviousState={() => handleStateChange("prev")}
+          onNextState={() => handleStateChange("next")}
+          isLoading={isStateLoading}
+        />
+      )}
     </div>
   );
 }

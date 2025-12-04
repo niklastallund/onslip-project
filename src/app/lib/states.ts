@@ -369,3 +369,27 @@ export async function getLocations() {
   console.log("Locations:", locations);
   return locations;
 }
+
+// Gets the current state of an order by reading its state resource
+export async function getOrderState(orderId: number): Promise<string | null> {
+  try {
+    const order = await api.getOrder(orderId);
+
+    if (!order || !order.resources || order.resources.length === 0) {
+      return null;
+    }
+
+    for (const resourceId of order.resources) {
+      const resource = await api.getResource(resourceId);
+      if (resource.name.startsWith(`order-${orderId}-state:`)) {
+        const state = resource.name.substring(`order-${orderId}-state:`.length);
+        return state === "null" ? null : state;
+      }
+    }
+
+    return null;
+  } catch (error) {
+    console.error(`Error getting state for order ${orderId}:`, error);
+    return null;
+  }
+}
