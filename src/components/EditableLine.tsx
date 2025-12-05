@@ -66,8 +66,8 @@ export default function EditableLine({
     return nearestPoint;
   };
 
-  // Handle clicking the line to select it
-  const handleLineClick = (e: Konva.KonvaEventObject<MouseEvent>) => {
+  // Handle clicking the line to select it (mouse or touch)
+  const handleLineClick = (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => {
     e.cancelBubble = true;
     onSelect(line.id);
   };

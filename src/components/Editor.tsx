@@ -16,11 +16,6 @@ import { useLineManagement } from "../hooks/useLineManagement";
 import { useDrawingMode } from "../hooks/useDrawingMode";
 import { useTableStates } from "../hooks/useTableStates";
 
-const INITIAL_TABLES: Table[] = [
-  createTable({ id: "T1", label: "T1", x: 20, y: 20, capacity: 4 }),
-  createTable({ id: "T2", label: "T2", x: 200, y: 40, capacity: 2 }),
-];
-
 export default function Editor() {
   const [backgroundImage] = useImage("/demo-floorplan.svg");
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -47,7 +42,7 @@ export default function Editor() {
     handleDragEnd,
     handleTransformEnd,
     handleToggleLock,
-  } = useTableManagement(INITIAL_TABLES);
+  } = useTableManagement([]);
 
   // Line management (lines, snap indicators)
   const {

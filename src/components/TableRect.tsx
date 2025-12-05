@@ -43,7 +43,7 @@ export default function TableRect({
   onTransformEnd,
   shapeRef,
 }: Props) {
-  const stroke = isSelected ? "#2563eb" : "#9ca3af";
+  const stroke = isSelected ? "#3b82f6" : "#9ca3af";
   const strokeWidth = isSelected ? 3 : 1;
   const fill = getStateColor(table.currentState);
 
