@@ -5,6 +5,7 @@ import type { Table } from "../types/table";
 export function useTableManagement(initialTables: Table[] = []) {
   const [tables, setTables] = useState<Table[]>(initialTables);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
   const tableRefs = useRef<Map<string, Konva.Group>>(new Map());
   const transformerRef = useRef<Konva.Transformer | null>(null);
 
@@ -12,6 +13,17 @@ export function useTableManagement(initialTables: Table[] = []) {
   const selectedTable = selectedId
     ? tables.find((t) => t.id === selectedId)
     : null;
+
+  // Handle table click to open dialog (only for locked tables)
+  const handleTableClick = (id: string | null) => {
+    setSelectedId(id);
+    if (id) {
+      const table = tables.find((t) => t.id === id);
+      if (table?.locked) {
+        setDialogOpen(true);
+      }
+    }
+  };
 
   // Handle table drag end
   const handleDragEnd = (id: string, x: number, y: number) => {
@@ -87,6 +99,9 @@ export function useTableManagement(initialTables: Table[] = []) {
     selectedTable,
     tableRefs,
     transformerRef,
+    dialogOpen,
+    setDialogOpen,
+    handleTableClick,
     handleDragEnd,
     handleTransformEnd,
     handleToggleLock,

@@ -1,13 +1,10 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, Lock, Unlock } from "lucide-react";
+import { Lock, Unlock } from "lucide-react";
 
 type Props = {
   tableName: string;
   currentState: string | null;
-  onPreviousState: () => void;
-  onNextState: () => void;
-  isLoading?: boolean;
   isLocked?: boolean;
   onToggleLock?: () => void;
 };
@@ -15,9 +12,6 @@ type Props = {
 export default function TableStateControls({
   tableName,
   currentState,
-  onPreviousState,
-  onNextState,
-  isLoading,
   isLocked = false,
   onToggleLock,
 }: Props) {
@@ -32,22 +26,6 @@ export default function TableStateControls({
         <div className="text-gray-500 capitalize">{displayState}</div>
       </div>
       <div className="flex gap-2">
-        <button
-          onClick={onPreviousState}
-          disabled={isLoading}
-          className="p-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-          title="Previous state"
-        >
-          <ChevronLeft className="w-4 h-4" />
-        </button>
-        <button
-          onClick={onNextState}
-          disabled={isLoading}
-          className="p-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-          title="Next state"
-        >
-          <ChevronRight className="w-4 h-4" />
-        </button>
         {onToggleLock && (
           <button
             onClick={onToggleLock}

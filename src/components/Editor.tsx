@@ -10,11 +10,13 @@ import TableStateControls from "./TableStateControls";
 import StageControls from "./StageControls";
 import TableLayer from "./TableLayer";
 import LineLayer from "./LineLayer";
+import TableDialog from "./TableDialog";
 import { useStageControls } from "../hooks/useStageControls";
 import { useTableManagement } from "../hooks/useTableManagement";
 import { useLineManagement } from "../hooks/useLineManagement";
 import { useDrawingMode } from "../hooks/useDrawingMode";
 import { useTableStates } from "../hooks/useTableStates";
+
 
 export default function Editor() {
   const [backgroundImage] = useImage("/demo-floorplan.svg");
@@ -39,6 +41,9 @@ export default function Editor() {
     selectedTable,
     tableRefs,
     transformerRef,
+    dialogOpen,
+    setDialogOpen,
+    handleTableClick,
     handleDragEnd,
     handleTransformEnd,
     handleToggleLock,
@@ -197,7 +202,7 @@ export default function Editor() {
           <TableLayer
             tables={tables}
             selectedId={selectedId}
-            setSelectedId={setSelectedId}
+            setSelectedId={handleTableClick}
             handleDragEnd={handleDragEnd}
             handleTransformEnd={handleTransformEnd}
             tableRefs={tableRefs}
@@ -225,13 +230,20 @@ export default function Editor() {
         <TableStateControls
           tableName={selectedTable.label || selectedTable.id}
           currentState={selectedTable.currentState || null}
-          onPreviousState={() => handleStateChange("prev")}
-          onNextState={() => handleStateChange("next")}
-          isLoading={isStateLoading}
           isLocked={selectedTable.locked}
           onToggleLock={handleToggleLock}
         />
       )}
+
+      {/* Table details dialog */}
+      <TableDialog
+        table={selectedTable || null}
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        onPreviousState={() => handleStateChange("prev")}
+        onNextState={() => handleStateChange("next")}
+        isLoading={isStateLoading}
+      />
     </div>
   );
 }
