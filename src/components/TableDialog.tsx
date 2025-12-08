@@ -37,7 +37,7 @@ export default function TableDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Table {table.label || table.id}</DialogTitle>
+          <DialogTitle>Table {table.name}</DialogTitle>
           <DialogDescription>Table information and details</DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
@@ -46,8 +46,8 @@ export default function TableDialog({
             <p>{table.id}</p>
           </div>
           <div>
-            <h3 className="font-semibold">Label:</h3>
-            <p>{table.label || "—"}</p>
+            <h3 className="font-semibold">Name:</h3>
+            <p>{table.name}</p>
           </div>
           <div>
             <h3 className="font-semibold">Position:</h3>

@@ -5,11 +5,11 @@ import TableRect from "./TableRect";
 
 interface TableLayerProps {
   tables: Table[];
-  selectedId: string | null;
-  setSelectedId: (id: string | null) => void;
-  handleDragEnd: (id: string, x: number, y: number) => void;
-  handleTransformEnd: (id: string) => void;
-  tableRefs: React.MutableRefObject<Map<string, Konva.Group>>;
+  selectedId: number | null;
+  setSelectedId: (id: number | null) => void;
+  handleDragEnd: (id: number, x: number, y: number) => void;
+  handleTransformEnd: (id: number) => void;
+  tableRefs: React.MutableRefObject<Map<number, Konva.Group>>;
   transformerRef: React.MutableRefObject<Konva.Transformer | null>;
 }
 

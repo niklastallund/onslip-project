@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Stage, Layer, Image } from "react-konva";
 import { useImage } from "react-konva-utils";
 import type { Table } from "../types/table";
-import { createTable } from "../types/table";
 import type { Line as LineType } from "../types/line";
 import TableStateControls from "./TableStateControls";
 import StageControls from "./StageControls";
@@ -16,7 +15,7 @@ import { useTableManagement } from "../hooks/useTableManagement";
 import { useLineManagement } from "../hooks/useLineManagement";
 import { useDrawingMode } from "../hooks/useDrawingMode";
 import { useTableStates } from "../hooks/useTableStates";
-
+import { deleteOrder } from "../lib/states";
 
 export default function Editor() {
   const [backgroundImage] = useImage("/demo-floorplan.svg");
@@ -47,6 +46,7 @@ export default function Editor() {
     handleDragEnd,
     handleTransformEnd,
     handleToggleLock,
+    handleCapacityChange,
   } = useTableManagement([]);
 
   // Line management (lines, snap indicators)
@@ -60,6 +60,22 @@ export default function Editor() {
     handleSnapIndicator,
     hideSnapIndicators,
   } = useLineManagement();
+
+  // Separate state for line selection (lines use string IDs)
+  const [selectedLineId, setSelectedLineId] = useState<string | null>(null);
+
+  // Wrapper to handle both table (number) and line (string) IDs
+  const handleSetSelectedId = (id: string | number | null) => {
+    if (typeof id === "number") {
+      setSelectedId(id);
+    } else if (typeof id === "string") {
+      // Lines use string IDs, but we're tracking tables separately
+      // For now, just clear selection when selecting a line
+      setSelectedId(null);
+    } else {
+      setSelectedId(null);
+    }
+  };
 
   // Drawing mode (table/line drawing, mouse handlers)
   const {
@@ -78,7 +94,7 @@ export default function Editor() {
     setTables,
     lines,
     setLines,
-    setSelectedId,
+    setSelectedId: handleSetSelectedId,
     snapIndicatorStartRef,
     snapIndicatorEndRef,
     SNAP_THRESHOLD,
@@ -94,18 +110,26 @@ export default function Editor() {
 
   // Handle keyboard delete
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
+    const handleKeyDown = async (e: KeyboardEvent) => {
       if ((e.key === "Delete" || e.key === "Backspace") && selectedId) {
         e.preventDefault();
 
-        const isTable = tables.some((t) => t.id === selectedId);
-        if (isTable) {
-          setTables((prevTables) =>
-            prevTables.filter((t) => t.id !== selectedId)
-          );
-        } else {
-          setLines((prevLines) => prevLines.filter((l) => l.id !== selectedId));
+        // Find the table to get its orderId
+        const table = tables.find((t) => t.id === selectedId);
+
+        // Delete order from backend if it exists
+        if (table?.orderId) {
+          try {
+            await deleteOrder(table.orderId);
+          } catch (error) {
+            console.error("Error deleting order from backend:", error);
+          }
         }
+
+        // Remove table from frontend
+        setTables((prevTables) =>
+          prevTables.filter((t) => t.id !== selectedId)
+        );
         setSelectedId(null);
       }
     };
@@ -127,15 +151,23 @@ export default function Editor() {
   };
 
   // Handle delete button
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!selectedId) return;
 
-    const isTable = tables.some((t) => t.id === selectedId);
-    if (isTable) {
-      setTables((prevTables) => prevTables.filter((t) => t.id !== selectedId));
-    } else {
-      setLines((prevLines) => prevLines.filter((l) => l.id !== selectedId));
+    // Find the table to get its orderId
+    const table = tables.find((t) => t.id === selectedId);
+
+    // Delete order from backend if it exists
+    if (table?.orderId) {
+      try {
+        await deleteOrder(table.orderId);
+      } catch (error) {
+        console.error("Error deleting order from backend:", error);
+      }
     }
+
+    // Remove table from frontend
+    setTables((prevTables) => prevTables.filter((t) => t.id !== selectedId));
     setSelectedId(null);
   };
 
@@ -212,8 +244,8 @@ export default function Editor() {
           {/* Lines Layer */}
           <LineLayer
             lines={lines}
-            selectedId={selectedId}
-            setSelectedId={setSelectedId}
+            selectedId={selectedLineId}
+            setSelectedId={setSelectedLineId}
             handleLineUpdate={handleLineUpdate}
             handleSnapIndicator={handleSnapIndicator}
             snapIndicatorStartRef={snapIndicatorStartRef}
@@ -228,10 +260,15 @@ export default function Editor() {
       {/* State controls for selected table */}
       {selectedTable && (
         <TableStateControls
-          tableName={selectedTable.label || selectedTable.id}
+          tableName={selectedTable.name}
           currentState={selectedTable.currentState || null}
           isLocked={selectedTable.locked}
+          capacity={selectedTable.capacity}
           onToggleLock={handleToggleLock}
+          onPreviousState={() => handleStateChange("prev")}
+          onNextState={() => handleStateChange("next")}
+          onCapacityChange={handleCapacityChange}
+          isStateLoading={isStateLoading}
         />
       )}
 

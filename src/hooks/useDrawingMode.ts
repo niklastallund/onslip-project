@@ -4,7 +4,7 @@ import type { Table } from "../types/table";
 import type { Line as LineType } from "../types/line";
 import { createTable } from "../types/table";
 import { createLine } from "../types/line";
-import { getNextTableId } from "../lib/tableHelpers";
+import { getNextTableId, getTableName } from "../lib/tableHelpers";
 import { findNearestEndpoint } from "../lib/lineHelpers";
 import { getRelativePointerPosition } from "../lib/stageHelpers";
 
@@ -253,8 +253,10 @@ export function useDrawingMode({
       }
 
       const id = getNextTableId(tables);
+      const name = getTableName(id);
       const newTable = createTable({
         id,
+        name,
         x: Math.round(x),
         y: Math.round(y),
         width: Math.round(width),

@@ -1,22 +1,18 @@
 import type { Table } from "../types/table";
 
-type GetNextOpts = {
-  prefix?: string; // default: 'T-'
-};
+/**
+ * Return next available numeric table ID.
+ */
+export function getNextTableId(tables: Table[]): number {
+  if (tables.length === 0) return 1;
+  const maxId = Math.max(...tables.map((t) => t.id));
+  return maxId + 1;
+}
 
 /**
- * Return next available table id using numeric suffixes found in existing table ids.
- * Example: if existing ids contain T1, T-2, X3 -> next will be "T-4" (prefix default 'T-')
+ * Generate a table name based on the ID.
+ * Example: 1 -> "T-1", 2 -> "T-2"
  */
-export function getNextTableId(tables: Table[], opts?: GetNextOpts) {
-  const prefix = opts?.prefix ?? "T-";
-  // extract first numeric group from each id
-  const nums = tables
-    .map((t) => {
-      const m = t.id.match(/(\d+)/);
-      return m ? parseInt(m[1], 10) : NaN;
-    })
-    .filter((n) => !Number.isNaN(n));
-  const next = nums.length ? Math.max(...nums) + 1 : 1;
-  return `${prefix}${next}`;
+export function getTableName(id: number, prefix: string = "T-"): string {
+  return `${prefix}${id}`;
 }

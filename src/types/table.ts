@@ -1,6 +1,6 @@
 export interface Table {
-  id: string;
-  label?: string; // e.g. "T1"
+  id: number;
+  name: string; // Display name e.g. "T-1"
   capacity: number; // number of seats
   x: number;
   y: number;
@@ -15,10 +15,10 @@ export interface Table {
 }
 
 export function createTable(opts?: Partial<Table>): Table {
-  const id = opts?.id ?? `t-${Date.now()}`;
+  const id = opts?.id ?? Date.now();
   return {
     id,
-    label: opts?.label ?? id,
+    name: opts?.name ?? `T-${id}`,
     capacity: opts?.capacity ?? 4,
     x: opts?.x ?? 20,
     y: opts?.y ?? 20,

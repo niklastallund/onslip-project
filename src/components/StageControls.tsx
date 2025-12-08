@@ -12,7 +12,7 @@ interface StageControlsProps {
   tables: Table[];
   lines: LineType[];
   onImport: (canvasState: { tables: Table[]; lines: LineType[] }) => void;
-  selectedId: string | null;
+  selectedId: number | null;
   onDelete: () => void;
 }
 

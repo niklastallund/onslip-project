@@ -181,9 +181,6 @@ export async function getTableStates(): Promise<string[]> {
     const orderB = parseInt(b.split(":")[0]);
     return orderA - orderB;
   });
-
-  console.log(stateNames);
-
   return stateNames;
 }
 
@@ -302,7 +299,6 @@ async function changeOrderState(orderId: number, direction: "next" | "prev") {
   }
 
   const currentStates = await getTableStates();
-  console.log("Table States:", currentStates);
 
   if (currentStates.length === 0) {
     console.error("No table states available to set.");

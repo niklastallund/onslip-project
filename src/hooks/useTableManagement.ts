@@ -4,9 +4,9 @@ import type { Table } from "../types/table";
 
 export function useTableManagement(initialTables: Table[] = []) {
   const [tables, setTables] = useState<Table[]>(initialTables);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<number | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const tableRefs = useRef<Map<string, Konva.Group>>(new Map());
+  const tableRefs = useRef<Map<number, Konva.Group>>(new Map());
   const transformerRef = useRef<Konva.Transformer | null>(null);
 
   // Get the currently selected table
@@ -15,7 +15,7 @@ export function useTableManagement(initialTables: Table[] = []) {
     : null;
 
   // Handle table click to open dialog (only for locked tables)
-  const handleTableClick = (id: string | null) => {
+  const handleTableClick = (id: number | null) => {
     setSelectedId(id);
     if (id) {
       const table = tables.find((t) => t.id === id);
@@ -26,14 +26,14 @@ export function useTableManagement(initialTables: Table[] = []) {
   };
 
   // Handle table drag end
-  const handleDragEnd = (id: string, x: number, y: number) => {
+  const handleDragEnd = (id: number, x: number, y: number) => {
     setTables((prevTables) =>
       prevTables.map((t) => (t.id === id ? { ...t, x, y } : t))
     );
   };
 
   // Handle transform end (resize/rotate)
-  const handleTransformEnd = (id: string) => {
+  const handleTransformEnd = (id: number) => {
     const node = tableRefs.current.get(id);
     if (!node) return;
 
@@ -75,6 +75,15 @@ export function useTableManagement(initialTables: Table[] = []) {
     );
   };
 
+  // Handle capacity change for selected table
+  const handleCapacityChange = (capacity: number) => {
+    if (!selectedId) return;
+
+    setTables((prevTables) =>
+      prevTables.map((t) => (t.id === selectedId ? { ...t, capacity } : t))
+    );
+  };
+
   // Attach transformer to selected table (only if not locked)
   useEffect(() => {
     if (transformerRef.current) {
@@ -105,5 +114,6 @@ export function useTableManagement(initialTables: Table[] = []) {
     handleDragEnd,
     handleTransformEnd,
     handleToggleLock,
+    handleCapacityChange,
   };
 }

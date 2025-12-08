@@ -11,7 +11,7 @@ import {
 interface UseTableStatesProps {
   tables: Table[];
   setTables: React.Dispatch<React.SetStateAction<Table[]>>;
-  selectedId: string | null;
+  selectedId: number | null;
 }
 
 export function useTableStates({
@@ -41,7 +41,7 @@ export function useTableStates({
   }, []);
 
   // Initialize an order for a table
-  const initializeTableOrder = async (tableId: string) => {
+  const initializeTableOrder = async (tableId: number) => {
     if (!locationId) {
       console.error("Location not available");
       return;
@@ -53,7 +53,10 @@ export function useTableStates({
     }
 
     try {
-      const orderId = await createOrder(table.label || tableId, locationId);
+      const orderId = await createOrder(
+        table.name || String(tableId),
+        locationId
+      );
       setTables((prevTables) =>
         prevTables.map((t) =>
           t.id === tableId ? { ...t, orderId, currentState: "null" } : t
@@ -65,7 +68,7 @@ export function useTableStates({
   };
 
   // Refresh table state from server
-  const refreshTableState = async (tableId: string) => {
+  const refreshTableState = async (tableId: number) => {
     const table = tables.find((t) => t.id === tableId);
     if (!table || !table.orderId) return;
 

@@ -7,9 +7,9 @@ import type { Table } from "../types/table";
 type Props = {
   table: Table;
   isSelected?: boolean;
-  onSelect?: (id: string) => void;
-  onDragEnd?: (id: string, x: number, y: number) => void;
-  onTransformEnd?: (id: string) => void;
+  onSelect?: (id: number) => void;
+  onDragEnd?: (id: number, x: number, y: number) => void;
+  onTransformEnd?: (id: number) => void;
   shapeRef?: (node: Konva.Group | null) => void;
 };
 
@@ -66,7 +66,7 @@ export default function TableRect({
       onTransformEnd={() => onTransformEnd?.(table.id)}
     >
       <Rect
-        id={table.id}
+        id={String(table.id)}
         x={0}
         y={0}
         width={table.width}
@@ -77,7 +77,7 @@ export default function TableRect({
         onClick={() => onSelect?.(table.id)}
       />
       <Text
-        text={table.label ?? `Table ${table.id}`}
+        text={table.name ?? `Table ${table.id}`}
         fontSize={14}
         fontStyle="bold"
         fill="#111827"
