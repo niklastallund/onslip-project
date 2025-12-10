@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { Table } from "../types/table";
+import TableChairs from "./TableChairs";
 
 interface TableDialogProps {
   table: Table | null;
@@ -40,6 +41,40 @@ export default function TableDialog({
           <DialogTitle>Table {table.name}</DialogTitle>
           <DialogDescription>Table information and details</DialogDescription>
         </DialogHeader>
+        <TableChairs
+          id={table.id}
+          name={table.name}
+          maxCapacity={table.capacity}
+          width={table.width}
+          height={table.height}
+          orderId={table.orderId}
+          currentState={table.currentState}
+          locked={table.locked}
+        />
+        {/* State change controls */}
+
+        <h3 className="font-semibold mb-3">Change State</h3>
+        <div className="flex gap-2">
+          <button
+            onClick={onPreviousState}
+            disabled={isLoading}
+            className="flex-1 flex items-center justify-center gap-2 p-3 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+            title="Previous state"
+          >
+            <ChevronLeft className="w-4 h-4" />
+            Previous
+          </button>
+          <button
+            onClick={onNextState}
+            disabled={isLoading}
+            className="flex-1 flex items-center justify-center gap-2 p-3 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+            title="Next state"
+          >
+            Next
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+
         <div className="space-y-4">
           <div>
             <h3 className="font-semibold">ID:</h3>
@@ -79,31 +114,6 @@ export default function TableDialog({
           <div>
             <h3 className="font-semibold">Locked:</h3>
             <p>{table.locked ? "Yes" : "No"}</p>
-          </div>
-        </div>
-
-        {/* State change controls */}
-        <div className="mt-6 pt-4 border-t">
-          <h3 className="font-semibold mb-3">Change State</h3>
-          <div className="flex gap-2">
-            <button
-              onClick={onPreviousState}
-              disabled={isLoading}
-              className="flex-1 flex items-center justify-center gap-2 p-3 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-              title="Previous state"
-            >
-              <ChevronLeft className="w-4 h-4" />
-              Previous
-            </button>
-            <button
-              onClick={onNextState}
-              disabled={isLoading}
-              className="flex-1 flex items-center justify-center gap-2 p-3 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-              title="Next state"
-            >
-              Next
-              <ChevronRight className="w-4 h-4" />
-            </button>
           </div>
         </div>
       </DialogContent>
