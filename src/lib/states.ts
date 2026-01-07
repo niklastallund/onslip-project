@@ -1,9 +1,6 @@
 "use server";
 
-import { API, nodeRequestHandler } from "@onslip/onslip-360-node-api";
-
-// Initialize the API with a request handler
-API.initialize(nodeRequestHandler({ userAgent: "onslip-project/1.0.0" }));
+import { api } from "./onslipClient";
 
 // Some dummy states for testing
 const states = [
@@ -19,12 +16,7 @@ const states = [
   "10:cleaned",
 ];
 
-const api = new API(
-  "https://test.onslip360.com/v1/",
-  "dev390569",
-  "key:admin+niklast@dev390569",
-  "NCldVjBjTFhPPDp9VEBEOXQ8bFRwJU4wRnBUdFpJPS8="
-);
+// `api` is imported from `src/lib/onslipClient` to ensure a single initialization
 
 export async function createTableStates(newStates?: string[]) {
   const listLabelCategories = await api.listLabelCategories();
