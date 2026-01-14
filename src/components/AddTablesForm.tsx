@@ -25,46 +25,58 @@ export interface TableCreationConfig {
 
 export default function AddTablesForm({ onAddTables }: AddTablesFormProps) {
   const [open, setOpen] = useState(false);
-  const [width, setWidth] = useState(120);
-  const [height, setHeight] = useState(80);
-  const [maxCapacity, setMaxCapacity] = useState(4);
-  const [minCapacity, setMinCapacity] = useState(2);
-  const [count, setCount] = useState(1);
+  const [width, setWidth] = useState("120");
+  const [height, setHeight] = useState("80");
+  const [maxCapacity, setMaxCapacity] = useState("4");
+  const [minCapacity, setMinCapacity] = useState("2");
+  const [count, setCount] = useState("1");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Convert to numbers
+    const widthNum = Number(width);
+    const heightNum = Number(height);
+    const maxCapacityNum = Number(maxCapacity);
+    const minCapacityNum = Number(minCapacity);
+    const countNum = Number(count);
+
     // Validate inputs
     if (
-      width <= 0 ||
-      height <= 0 ||
-      maxCapacity <= 0 ||
-      minCapacity <= 0 ||
-      count <= 0
+      widthNum <= 0 ||
+      heightNum <= 0 ||
+      maxCapacityNum <= 0 ||
+      minCapacityNum <= 0 ||
+      countNum <= 0 ||
+      isNaN(widthNum) ||
+      isNaN(heightNum) ||
+      isNaN(maxCapacityNum) ||
+      isNaN(minCapacityNum) ||
+      isNaN(countNum)
     ) {
       alert("All values must be greater than 0");
       return;
     }
 
-    if (minCapacity > maxCapacity) {
+    if (minCapacityNum > maxCapacityNum) {
       alert("Min capacity cannot be greater than max capacity");
       return;
     }
 
     onAddTables({
-      width,
-      height,
-      maxCapacity,
-      minCapacity,
-      count,
+      width: widthNum,
+      height: heightNum,
+      maxCapacity: maxCapacityNum,
+      minCapacity: minCapacityNum,
+      count: countNum,
     });
 
     // Reset form and close
-    setWidth(120);
-    setHeight(80);
-    setMaxCapacity(4);
-    setMinCapacity(2);
-    setCount(1);
+    setWidth("120");
+    setHeight("80");
+    setMaxCapacity("4");
+    setMinCapacity("2");
+    setCount("1");
     setOpen(false);
   };
 
@@ -86,12 +98,12 @@ export default function AddTablesForm({ onAddTables }: AddTablesFormProps) {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-1">
-                Width (px)
+                Width (cm)
               </label>
               <input
                 type="number"
                 value={width}
-                onChange={(e) => setWidth(Number(e.target.value))}
+                onChange={(e) => setWidth(e.target.value)}
                 min="30"
                 max="500"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
@@ -99,12 +111,12 @@ export default function AddTablesForm({ onAddTables }: AddTablesFormProps) {
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">
-                Height (px)
+                Height (cm)
               </label>
               <input
                 type="number"
                 value={height}
-                onChange={(e) => setHeight(Number(e.target.value))}
+                onChange={(e) => setHeight(e.target.value)}
                 min="30"
                 max="500"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
@@ -120,7 +132,7 @@ export default function AddTablesForm({ onAddTables }: AddTablesFormProps) {
               <input
                 type="number"
                 value={minCapacity}
-                onChange={(e) => setMinCapacity(Number(e.target.value))}
+                onChange={(e) => setMinCapacity(e.target.value)}
                 min="1"
                 max="20"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
@@ -133,7 +145,7 @@ export default function AddTablesForm({ onAddTables }: AddTablesFormProps) {
               <input
                 type="number"
                 value={maxCapacity}
-                onChange={(e) => setMaxCapacity(Number(e.target.value))}
+                onChange={(e) => setMaxCapacity(e.target.value)}
                 min="1"
                 max="20"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
@@ -148,7 +160,7 @@ export default function AddTablesForm({ onAddTables }: AddTablesFormProps) {
             <input
               type="number"
               value={count}
-              onChange={(e) => setCount(Number(e.target.value))}
+              onChange={(e) => setCount(e.target.value)}
               min="1"
               max="50"
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
