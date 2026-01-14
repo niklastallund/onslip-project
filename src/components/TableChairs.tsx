@@ -4,6 +4,12 @@ import { useState, useEffect } from "react";
 import { createChair, getChair, getTableChairs } from "@/lib/chairs";
 import type { Chair } from "@/types/table";
 
+interface ChairDetails {
+  id: number;
+  name: string;
+  created?: string;
+}
+
 interface TableChairsProps {
   id: number;
   name: string;
@@ -25,9 +31,10 @@ export default function TableChairs({
   currentState,
 }: TableChairsProps) {
   const [chairs, setChairs] = useState<Map<number, Chair>>(new Map());
-  const [chairDetails, setChairDetails] = useState<Map<number, unknown>>(
+  const [chairDetails, setChairDetails] = useState<Map<number, ChairDetails>>(
     new Map()
   );
+  const [selectedChair, setSelectedChair] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   // Map state names to colors (same as canvas)
@@ -140,10 +147,8 @@ export default function TableChairs({
           return newMap;
         });
 
-        // Show chair details
-        alert(
-          `Chair Details:\nName: ${details.name}\nID: ${details.id}\nCreated: ${details.created}`
-        );
+        // Set selected chair to show details below
+        setSelectedChair(position);
       } else {
         // Chair doesn't exist - create new one
         const chairName = `${name}-Chair-${position + 1}`;
@@ -151,8 +156,6 @@ export default function TableChairs({
 
         // Reload chairs to get the new chair with its ID
         await loadExistingChairs();
-
-        alert(`Created new chair: ${chairName}`);
       }
     } catch (error) {
       console.error("Failed to handle chair click:", error);
@@ -304,6 +307,48 @@ export default function TableChairs({
       </div>
       {isLoading && (
         <div className="mt-2 text-sm text-blue-600">Loading...</div>
+      )}
+
+      {/* Chair Details Section */}
+      {selectedChair !== null && chairDetails.has(selectedChair) && (
+        <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg w-full max-w-md">
+          <div className="flex justify-between items-start mb-2">
+            <h3 className="font-semibold text-lg text-gray-800">
+              Chair Details
+            </h3>
+            <button
+              onClick={() => setSelectedChair(null)}
+              className="text-gray-500 hover:text-gray-700 text-xl leading-none"
+              title="Close details"
+            >
+              ×
+            </button>
+          </div>
+          {(() => {
+            const details = chairDetails.get(selectedChair);
+            if (!details) return null;
+            return (
+              <div className="space-y-2 text-sm">
+                <div>
+                  <span className="font-medium text-gray-700">Name: </span>
+                  <span className="text-gray-600">{details.name}</span>
+                </div>
+                <div>
+                  <span className="font-medium text-gray-700">ID: </span>
+                  <span className="text-gray-600">{details.id}</span>
+                </div>
+                <div>
+                  <span className="font-medium text-gray-700">Created: </span>
+                  <span className="text-gray-600">
+                    {details.created
+                      ? new Date(details.created).toLocaleString()
+                      : "N/A"}
+                  </span>
+                </div>
+              </div>
+            );
+          })()}
+        </div>
       )}
     </div>
   );

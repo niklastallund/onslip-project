@@ -1,6 +1,7 @@
 import DrawSquareButton from "./DrawSquareButton";
 import DrawLineButton from "./DrawLineButton";
 import ExportImportButtons from "./ExportImportButtons";
+import AddTablesForm, { type TableCreationConfig } from "./AddTablesForm";
 import type { Table } from "../types/table";
 import type { Line as LineType } from "../types/line";
 
@@ -14,6 +15,7 @@ interface StageControlsProps {
   onImport: (canvasState: { tables: Table[]; lines: LineType[] }) => void;
   selectedId: number | null;
   onDelete: () => void;
+  onAddTables: (config: TableCreationConfig) => void;
 }
 
 export default function StageControls({
@@ -26,9 +28,11 @@ export default function StageControls({
   onImport,
   selectedId,
   onDelete,
+  onAddTables,
 }: StageControlsProps) {
   return (
     <div className="mb-2 flex items-center gap-3">
+      <AddTablesForm onAddTables={onAddTables} />
       <DrawSquareButton
         isDrawing={tableDrawMode}
         onToggle={onToggleTableDraw}

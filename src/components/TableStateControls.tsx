@@ -1,6 +1,6 @@
 "use client";
 
-import { Lock, Unlock, ChevronLeft, ChevronRight } from "lucide-react";
+import { Lock, Unlock, ChevronLeft, ChevronRight, Copy } from "lucide-react";
 
 type Props = {
   tableName: string;
@@ -11,6 +11,7 @@ type Props = {
   onPreviousState: () => void;
   onNextState: () => void;
   onCapacityChange: (capacity: number) => void;
+  onCopyTable: () => void;
   isStateLoading?: boolean;
 };
 
@@ -25,6 +26,7 @@ export default function TableStateControls({
   onPreviousState,
   onNextState,
   onCapacityChange,
+  onCopyTable,
   isStateLoading = false,
 }: Props) {
   const displayState = currentState
@@ -79,8 +81,15 @@ export default function TableStateControls({
         </div>
       </div>
 
-      {/* Lock button */}
+      {/* Copy and Lock buttons */}
       <div className="flex gap-2">
+        <button
+          onClick={onCopyTable}
+          className="p-2 rounded-md bg-blue-500 text-white hover:bg-blue-600 transition-colors"
+          title="Copy table"
+        >
+          <Copy className="w-4 h-4" />
+        </button>
         {onToggleLock && (
           <button
             onClick={onToggleLock}

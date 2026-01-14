@@ -16,6 +16,13 @@ import { useLineManagement } from "../hooks/useLineManagement";
 import { useDrawingMode } from "../hooks/useDrawingMode";
 import { useTableStates } from "../hooks/useTableStates";
 import { deleteOrder } from "../lib/states";
+import AddTablesForm, { type TableCreationConfig } from "./AddTablesForm";
+import {
+  getNextTableId,
+  getTableName,
+  calculateTablePositions,
+} from "../lib/tableHelpers";
+import { createTable } from "../types/table";
 
 export default function Editor() {
   const [backgroundImage] = useImage("/demo-floorplan.svg");
@@ -171,6 +178,54 @@ export default function Editor() {
     setSelectedId(null);
   };
 
+  // Handle bulk table creation
+  const handleAddTables = (config: TableCreationConfig) => {
+    const { width, height, maxCapacity, minCapacity, count } = config;
+
+    // Calculate positions for all tables
+    const positions = calculateTablePositions(count, width, height);
+
+    // Create new tables
+    const newTables = positions.map((pos, index) => {
+      const id = getNextTableId(tables) + index;
+      return createTable({
+        id,
+        name: getTableName(id),
+        capacity: maxCapacity,
+        width,
+        height,
+        x: pos.x,
+        y: pos.y,
+      });
+    });
+
+    // Add all new tables to state
+    setTables((prevTables) => [...prevTables, ...newTables]);
+  };
+
+  // Handle copy table
+  const handleCopyTable = () => {
+    if (!selectedId) return;
+
+    const tableToCopy = tables.find((t) => t.id === selectedId);
+    if (!tableToCopy) return;
+
+    const id = getNextTableId(tables);
+    const newTable = createTable({
+      id,
+      name: getTableName(id),
+      capacity: tableToCopy.capacity,
+      width: tableToCopy.width,
+      height: tableToCopy.height,
+      x: tableToCopy.x + 30, // Offset to avoid overlap
+      y: tableToCopy.y + 30,
+      rotation: tableToCopy.rotation,
+    });
+
+    setTables((prevTables) => [...prevTables, newTable]);
+    setSelectedId(id); // Select the new copy
+  };
+
   return (
     <div className="p-4">
       <StageControls
@@ -183,6 +238,7 @@ export default function Editor() {
         onImport={handleImport}
         selectedId={selectedId}
         onDelete={handleDelete}
+        onAddTables={handleAddTables}
       />
 
       <div
@@ -268,6 +324,7 @@ export default function Editor() {
           onPreviousState={() => handleStateChange("prev")}
           onNextState={() => handleStateChange("next")}
           onCapacityChange={handleCapacityChange}
+          onCopyTable={handleCopyTable}
           isStateLoading={isStateLoading}
         />
       )}
