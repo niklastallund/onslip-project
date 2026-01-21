@@ -16,7 +16,7 @@ import { useLineManagement } from "../hooks/useLineManagement";
 import { useDrawingMode } from "../hooks/useDrawingMode";
 import { useTableStates } from "../hooks/useTableStates";
 import { deleteOrder } from "../lib/states";
-import AddTablesForm, { type TableCreationConfig } from "./AddTablesForm";
+import { type TableCreationConfig } from "./AddTablesForm";
 import {
   getNextTableId,
   getTableName,

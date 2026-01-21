@@ -35,7 +35,7 @@ export default function TableChairs({
 }: TableChairsProps) {
   const [chairs, setChairs] = useState<Map<number, Chair>>(new Map());
   const [chairDetails, setChairDetails] = useState<Map<number, ChairDetails>>(
-    new Map()
+    new Map(),
   );
   const [selectedChair, setSelectedChair] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -93,12 +93,12 @@ export default function TableChairs({
             let position = 0;
             if (chair.labelNames && chair.labelNames.length > 0) {
               const positionLabel = chair.labelNames.find((labelName: string) =>
-                labelName.startsWith("chair-position-")
+                labelName.startsWith("chair-position-"),
               );
               if (positionLabel) {
                 position = parseInt(
                   positionLabel.replace("chair-position-", ""),
-                  10
+                  10,
                 );
               }
             }
@@ -110,7 +110,7 @@ export default function TableChairs({
               name: chair.name,
             });
           }
-        }
+        },
       );
 
       setChairs(chairMap);
@@ -167,7 +167,7 @@ export default function TableChairs({
         // Check if we've reached max capacity before creating new chair
         if (chairs.size >= maxCapacity) {
           alert(
-            `Maximum capacity reached (${maxCapacity} chairs). Remove an existing chair to add a new one.`
+            `Maximum capacity reached (${maxCapacity} chairs). Remove an existing chair to add a new one.`,
           );
           return;
         }
@@ -188,22 +188,11 @@ export default function TableChairs({
   };
 
   // Calculate chair positions around the table
-  // Use maxPossiblePositions to show all possible positions
   const getChairPositions = () => {
     const positions = [];
     const distribution = distributeChairPositions(width, height);
 
     let chairIndex = 0;
-
-    // Top-left to top diagonal
-    for (let i = 0; i < distribution.topLeftToTop; i++) {
-      positions.push({
-        index: chairIndex++,
-        side: "top-left-to-top",
-        position: i,
-        total: distribution.topLeftToTop,
-      });
-    }
 
     // Top chairs
     for (let i = 0; i < distribution.top; i++) {
@@ -212,26 +201,6 @@ export default function TableChairs({
         side: "top",
         position: i,
         total: distribution.top,
-      });
-    }
-
-    // Top to top-right diagonal
-    for (let i = 0; i < distribution.topToTopRight; i++) {
-      positions.push({
-        index: chairIndex++,
-        side: "top-to-top-right",
-        position: i,
-        total: distribution.topToTopRight,
-      });
-    }
-
-    // Top-right to right diagonal
-    for (let i = 0; i < distribution.topRightToRight; i++) {
-      positions.push({
-        index: chairIndex++,
-        side: "top-right-to-right",
-        position: i,
-        total: distribution.topRightToRight,
       });
     }
 
@@ -245,26 +214,6 @@ export default function TableChairs({
       });
     }
 
-    // Right to bottom-right diagonal
-    for (let i = 0; i < distribution.rightToBottomRight; i++) {
-      positions.push({
-        index: chairIndex++,
-        side: "right-to-bottom-right",
-        position: i,
-        total: distribution.rightToBottomRight,
-      });
-    }
-
-    // Bottom-right to bottom diagonal
-    for (let i = 0; i < distribution.bottomRightToBottom; i++) {
-      positions.push({
-        index: chairIndex++,
-        side: "bottom-right-to-bottom",
-        position: i,
-        total: distribution.bottomRightToBottom,
-      });
-    }
-
     // Bottom chairs
     for (let i = 0; i < distribution.bottom; i++) {
       positions.push({
@@ -275,26 +224,6 @@ export default function TableChairs({
       });
     }
 
-    // Bottom to bottom-left diagonal
-    for (let i = 0; i < distribution.bottomToBottomLeft; i++) {
-      positions.push({
-        index: chairIndex++,
-        side: "bottom-to-bottom-left",
-        position: i,
-        total: distribution.bottomToBottomLeft,
-      });
-    }
-
-    // Bottom-left to left diagonal
-    for (let i = 0; i < distribution.bottomLeftToLeft; i++) {
-      positions.push({
-        index: chairIndex++,
-        side: "bottom-left-to-left",
-        position: i,
-        total: distribution.bottomLeftToLeft,
-      });
-    }
-
     // Left chairs
     for (let i = 0; i < distribution.left; i++) {
       positions.push({
@@ -302,16 +231,6 @@ export default function TableChairs({
         side: "left",
         position: i,
         total: distribution.left,
-      });
-    }
-
-    // Left to top-left diagonal
-    for (let i = 0; i < distribution.leftToTopLeft; i++) {
-      positions.push({
-        index: chairIndex++,
-        side: "left-to-top-left",
-        position: i,
-        total: distribution.leftToTopLeft,
       });
     }
 
@@ -381,51 +300,23 @@ export default function TableChairs({
 
   const chairPositions = getChairPositions();
 
-  const topLeftToTop = chairPositions.filter(
-    (c) => c.side === "top-left-to-top"
-  );
   const topChairs = chairPositions.filter((c) => c.side === "top");
-  const topToTopRight = chairPositions.filter(
-    (c) => c.side === "top-to-top-right"
-  );
-  const topRightToRight = chairPositions.filter(
-    (c) => c.side === "top-right-to-right"
-  );
   const rightChairs = chairPositions.filter((c) => c.side === "right");
-  const rightToBottomRight = chairPositions.filter(
-    (c) => c.side === "right-to-bottom-right"
-  );
-  const bottomRightToBottom = chairPositions.filter(
-    (c) => c.side === "bottom-right-to-bottom"
-  );
   const bottomChairs = chairPositions.filter((c) => c.side === "bottom");
-  const bottomToBottomLeft = chairPositions.filter(
-    (c) => c.side === "bottom-to-bottom-left"
-  );
-  const bottomLeftToLeft = chairPositions.filter(
-    (c) => c.side === "bottom-left-to-left"
-  );
   const leftChairs = chairPositions.filter((c) => c.side === "left");
-  const leftToTopLeft = chairPositions.filter(
-    (c) => c.side === "left-to-top-left"
-  );
 
   return (
     <div className="flex flex-col items-center justify-center w-full min-h-[300px] p-8 border border-gray-500 rounded-lg">
-      {/* Top row: diagonal, top chairs, diagonal */}
+      {/* Top chairs */}
       <div className="flex gap-2 mb-2">
-        {topLeftToTop.map((chair) => renderChair(chair))}
         {topChairs.map((chair) => renderChair(chair))}
-        {topToTopRight.map((chair) => renderChair(chair))}
       </div>
 
       {/* Middle section with left chairs, table, and right chairs */}
       <div className="flex items-center gap-2">
         {/* Left chairs */}
         <div className="flex flex-col gap-2">
-          {leftToTopLeft.map((chair) => renderChair(chair))}
           {leftChairs.map((chair) => renderChair(chair))}
-          {bottomLeftToLeft.map((chair) => renderChair(chair))}
         </div>
 
         {/* Table */}
@@ -447,17 +338,13 @@ export default function TableChairs({
 
         {/* Right chairs */}
         <div className="flex flex-col gap-2">
-          {topRightToRight.map((chair) => renderChair(chair))}
           {rightChairs.map((chair) => renderChair(chair))}
-          {rightToBottomRight.map((chair) => renderChair(chair))}
         </div>
       </div>
 
-      {/* Bottom row: diagonal, bottom chairs, diagonal */}
+      {/* Bottom chairs */}
       <div className="flex gap-2 mt-2">
-        {bottomToBottomLeft.map((chair) => renderChair(chair))}
         {bottomChairs.map((chair) => renderChair(chair))}
-        {bottomRightToBottom.map((chair) => renderChair(chair))}
       </div>
 
       {/* Status info and legend */}

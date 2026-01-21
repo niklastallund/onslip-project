@@ -20,7 +20,7 @@ export default function ChairPositionEditor({
   onUpdate,
 }: ChairPositionEditorProps) {
   const [selectedPositions, setSelectedPositions] = useState<Set<number>>(
-    new Set(availablePositions)
+    new Set(availablePositions),
   );
 
   // Update local state when prop changes
@@ -60,56 +60,16 @@ export default function ChairPositionEditor({
   };
 
   let currentIndex = 0;
-  const topLeftToTop = getPositionsForSide(
-    currentIndex,
-    distribution.topLeftToTop
-  );
-  currentIndex += distribution.topLeftToTop;
   const topPositions = getPositionsForSide(currentIndex, distribution.top);
   currentIndex += distribution.top;
-  const topToTopRight = getPositionsForSide(
-    currentIndex,
-    distribution.topToTopRight
-  );
-  currentIndex += distribution.topToTopRight;
-  const topRightToRight = getPositionsForSide(
-    currentIndex,
-    distribution.topRightToRight
-  );
-  currentIndex += distribution.topRightToRight;
   const rightPositions = getPositionsForSide(currentIndex, distribution.right);
   currentIndex += distribution.right;
-  const rightToBottomRight = getPositionsForSide(
-    currentIndex,
-    distribution.rightToBottomRight
-  );
-  currentIndex += distribution.rightToBottomRight;
-  const bottomRightToBottom = getPositionsForSide(
-    currentIndex,
-    distribution.bottomRightToBottom
-  );
-  currentIndex += distribution.bottomRightToBottom;
   const bottomPositions = getPositionsForSide(
     currentIndex,
-    distribution.bottom
+    distribution.bottom,
   );
   currentIndex += distribution.bottom;
-  const bottomToBottomLeft = getPositionsForSide(
-    currentIndex,
-    distribution.bottomToBottomLeft
-  );
-  currentIndex += distribution.bottomToBottomLeft;
-  const bottomLeftToLeft = getPositionsForSide(
-    currentIndex,
-    distribution.bottomLeftToLeft
-  );
-  currentIndex += distribution.bottomLeftToLeft;
   const leftPositions = getPositionsForSide(currentIndex, distribution.left);
-  currentIndex += distribution.left;
-  const leftToTopLeft = getPositionsForSide(
-    currentIndex,
-    distribution.leftToTopLeft
-  );
 
   const renderPositionButton = (position: number) => {
     const isSelected = selectedPositions.has(position);
@@ -159,20 +119,16 @@ export default function ChairPositionEditor({
 
       {/* Position visualization */}
       <div className="flex flex-col items-center">
-        {/* Top row: all top positions */}
+        {/* Top row */}
         <div className="flex gap-2 mb-2">
-          {topLeftToTop.map((pos) => renderPositionButton(pos))}
           {topPositions.map((pos) => renderPositionButton(pos))}
-          {topToTopRight.map((pos) => renderPositionButton(pos))}
         </div>
 
         {/* Middle: Left, Table, Right */}
         <div className="flex items-center gap-2">
           {/* Left positions */}
           <div className="flex flex-col gap-2">
-            {leftToTopLeft.map((pos) => renderPositionButton(pos))}
             {leftPositions.map((pos) => renderPositionButton(pos))}
-            {bottomLeftToLeft.map((pos) => renderPositionButton(pos))}
           </div>
 
           {/* Table representation */}
@@ -193,17 +149,13 @@ export default function ChairPositionEditor({
 
           {/* Right positions */}
           <div className="flex flex-col gap-2">
-            {topRightToRight.map((pos) => renderPositionButton(pos))}
             {rightPositions.map((pos) => renderPositionButton(pos))}
-            {rightToBottomRight.map((pos) => renderPositionButton(pos))}
           </div>
         </div>
 
-        {/* Bottom row: all bottom positions */}
+        {/* Bottom row */}
         <div className="flex gap-2 mt-2">
-          {bottomToBottomLeft.map((pos) => renderPositionButton(pos))}
           {bottomPositions.map((pos) => renderPositionButton(pos))}
-          {bottomRightToBottom.map((pos) => renderPositionButton(pos))}
         </div>
       </div>
 
