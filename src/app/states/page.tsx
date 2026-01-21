@@ -1,5 +1,6 @@
 "use client";
 
+import { listAllProducts } from "@/lib/products";
 import {
   createOrder,
   createTableStates,
@@ -43,6 +44,10 @@ export default function PageState() {
     await setPreviousOrderState(4);
   }
 
+  async function handleListProducts() {
+    console.log(await listAllProducts());
+  }
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen">
       <button onClick={handleClick}>Create Table States</button>
@@ -60,6 +65,8 @@ export default function PageState() {
       <button onClick={handleNextState}>Next State Test</button>
       <h1>---------------------------------</h1>
       <button onClick={handlePrevState}>Previous State Test</button>
+      <h1>---------------------------------</h1>
+      <button onClick={handleListProducts}>List All Products</button>
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { createChair, getChair, getTableChairs } from "@/lib/chairs";
 import type { Chair } from "@/types/table";
 import { distributeChairPositions } from "@/lib/tableHelpers";
+import ProductSelector from "./ProductSelector";
 
 interface ChairDetails {
   id: number;
@@ -39,6 +40,11 @@ export default function TableChairs({
   );
   const [selectedChair, setSelectedChair] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [showProductSelector, setShowProductSelector] = useState(false);
+  const [selectedChairForProducts, setSelectedChairForProducts] = useState<{
+    chairId: number;
+    position: number;
+  } | null>(null);
 
   // Use availablePositions if provided, otherwise allow all positions up to maxCapacity
   const allowedPositions = availablePositions
@@ -146,7 +152,7 @@ export default function TableChairs({
       const existingChair = chairs.get(position);
 
       if (existingChair) {
-        // Chair exists - fetch and display details
+        // Chair exists - show product selector
         const details = await getChair(existingChair.chairId);
 
         if (!details) {
@@ -163,6 +169,13 @@ export default function TableChairs({
 
         // Set selected chair to show details below
         setSelectedChair(position);
+
+        // Show product selector for this chair
+        setSelectedChairForProducts({
+          chairId: existingChair.chairId,
+          position: position,
+        });
+        setShowProductSelector(true);
       } else {
         // Check if we've reached max capacity before creating new chair
         if (chairs.size >= maxCapacity) {
@@ -416,6 +429,25 @@ export default function TableChairs({
             );
           })()}
         </div>
+      )}
+
+      {/* Product Selector */}
+      {showProductSelector && selectedChairForProducts && (
+        <ProductSelector
+          chairId={selectedChairForProducts.chairId}
+          chairName={
+            chairDetails.get(selectedChairForProducts.position)?.name ||
+            `Chair ${selectedChairForProducts.position + 1}`
+          }
+          onClose={() => {
+            setShowProductSelector(false);
+            setSelectedChairForProducts(null);
+          }}
+          onProductAdded={() => {
+            // Optionally reload chair details to show updated items
+            loadExistingChairs();
+          }}
+        />
       )}
     </div>
   );
