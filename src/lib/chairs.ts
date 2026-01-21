@@ -69,7 +69,7 @@ async function getOrCreatePositionLabel(position: number): Promise<number> {
 export async function createChair(
   name: string,
   orderId: number,
-  position: number
+  position: number,
 ) {
   try {
     // Get or create the position label
@@ -120,20 +120,38 @@ export async function getTableChairs(tableId: number) {
     const labelMap = new Map(allLabels.map((label) => [label.id, label.name]));
 
     const chairs = [];
-    // Fetch each chair associated with the table
-    for (const chairId of table.resources) {
-      const chair = await getChair(chairId);
+    // Fetch each resource and filter for actual chairs (tabs) vs state resources
+    for (const resourceId of table.resources) {
+      try {
+        // First check if this is a resource (state) or a tab (chair)
+        // Try to get as tab first
+        const chair = await api.getTab(resourceId);
 
-      if (chair) {
-        // Add label names to the chair object for easier position extraction
-        const chairWithLabels = {
-          ...chair,
-          labelNames:
-            chair.labels
-              ?.map((labelId: number) => labelMap.get(labelId))
-              .filter(Boolean) || [],
-        };
-        chairs.push(chairWithLabels);
+        if (chair) {
+          // Add label names to the chair object for easier position extraction
+          const chairWithLabels = {
+            ...chair,
+            labelNames:
+              chair.labels
+                ?.map((labelId: number) => labelMap.get(labelId))
+                .filter(Boolean) || [],
+          };
+          chairs.push(chairWithLabels);
+        }
+      } catch (error: unknown) {
+        // If getTab fails, it's likely a resource (state), not a chair - skip it
+        if (
+          error &&
+          typeof error === "object" &&
+          "status" in error &&
+          error.status === 404
+        ) {
+          console.log(
+            `Resource ${resourceId} is not a chair (likely a state resource), skipping`,
+          );
+        } else {
+          console.warn(`Error fetching resource ${resourceId}:`, error);
+        }
       }
     }
 
