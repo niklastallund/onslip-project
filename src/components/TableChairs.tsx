@@ -8,6 +8,7 @@ import {
   getChairItems,
   listAllProducts,
   addProductToChair,
+  getProduct,
 } from "@/lib/products";
 
 interface ChairDetails {
@@ -62,6 +63,10 @@ export default function TableChairs({
   const [chairItems, setChairItems] = useState<Map<number, Item[]>>(new Map());
   const [products, setProducts] = useState<Product[]>([]);
   const [addingProduct, setAddingProduct] = useState<number | null>(null);
+  const [selectedItem, setSelectedItem] = useState<{
+    item: Item;
+    productDetails: Product | null;
+  } | null>(null);
 
   // Use availablePositions if provided, otherwise allow all positions up to maxCapacity
   const allowedPositions = availablePositions
@@ -175,6 +180,21 @@ export default function TableChairs({
       });
     } catch (error) {
       console.error("Failed to load chair items:", error);
+    }
+  };
+
+  const handleItemClick = async (item: Item) => {
+    if (!item.product) {
+      setSelectedItem({ item, productDetails: null });
+      return;
+    }
+
+    try {
+      const productDetails = await getProduct(item.product);
+      setSelectedItem({ item, productDetails });
+    } catch (error) {
+      console.error("Failed to load product details:", error);
+      setSelectedItem({ item, productDetails: null });
     }
   };
 
@@ -480,41 +500,48 @@ export default function TableChairs({
                   </span>
                 </div>
 
-                {/* Items List */}
+                {/* Items List - Horizontal Timeline */}
                 <div className="pt-2 border-t border-blue-300">
                   <h4 className="font-semibold text-gray-800 mb-2">
-                    Items ({items.length})
+                    Items Timeline ({items.length})
                   </h4>
                   {items.length === 0 ? (
                     <p className="text-gray-500 italic text-xs">
                       No items added yet. Click a product below to add.
                     </p>
                   ) : (
-                    <div className="space-y-2">
-                      {items.map((item, index) => (
-                        <div
-                          key={index}
-                          className="flex justify-between items-start bg-white p-2 rounded border border-blue-200"
-                        >
-                          <div className="flex-1">
-                            <div className="font-medium text-gray-800">
-                              {item["product-name"]}
-                            </div>
-                            <div className="text-xs text-gray-600">
-                              Qty: {item.quantity} ×{" "}
-                              {(item.price || 0).toFixed(2)} kr
-                            </div>
-                          </div>
-                          <div className="font-semibold text-gray-800">
-                            {((item.price || 0) * item.quantity).toFixed(2)} kr
-                          </div>
+                    <>
+                      <div className="overflow-x-auto pb-2 scrollbar-hide">
+                        <div className="flex gap-3 min-w-max">
+                          {items.map((item, index) => (
+                            <button
+                              key={index}
+                              onClick={() => handleItemClick(item)}
+                              className="shrink-0 w-32 bg-white p-3 rounded-lg border-2 border-blue-200 hover:border-blue-400 transition-all hover:shadow-md cursor-pointer relative"
+                            >
+                              {/* Order number badge */}
+                              <div className="absolute -top-2 -left-2 bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">
+                                {index + 1}
+                              </div>
+                              <div className="text-sm font-medium text-gray-800 truncate mb-1">
+                                {item["product-name"]}
+                              </div>
+                              <div className="text-xs text-gray-600 mb-1">
+                                Qty: {item.quantity}
+                              </div>
+                              <div className="text-sm font-semibold text-gray-900">
+                                {((item.price || 0) * item.quantity).toFixed(2)}{" "}
+                                kr
+                              </div>
+                            </button>
+                          ))}
                         </div>
-                      ))}
+                      </div>
                       <div className="flex justify-between items-center pt-2 border-t border-blue-300 font-bold text-gray-900">
                         <span>Total:</span>
                         <span>{totalPrice.toFixed(2)} kr</span>
                       </div>
-                    </div>
+                    </>
                   )}
                 </div>
 
@@ -528,7 +555,7 @@ export default function TableChairs({
                       No products available. Create products first.
                     </p>
                   ) : (
-                    <div className="overflow-x-auto">
+                    <div className="overflow-x-auto scrollbar-hide">
                       <div className="flex gap-2 pb-1">
                         {products.map((product: Product) => {
                           const chair = chairs.get(selectedChair);
@@ -586,6 +613,95 @@ export default function TableChairs({
               </div>
             );
           })()}
+        </div>
+      )}
+
+      {/* Item Details Popup */}
+      {selectedItem && (
+        <div
+          className="fixed inset-0 bg-opacity-20 flex items-center justify-center z-50"
+          onClick={() => setSelectedItem(null)}
+        >
+          <div
+            className="bg-white rounded-lg p-6 max-w-md w-full mx-4 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-start mb-4">
+              <h3 className="text-xl font-bold text-gray-900">Item Details</h3>
+              <button
+                onClick={() => setSelectedItem(null)}
+                className="text-gray-500 hover:text-gray-700 text-2xl leading-none"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="text-sm font-semibold text-gray-700">
+                  Product Name
+                </label>
+                <p className="text-gray-900">
+                  {selectedItem.item["product-name"]}
+                </p>
+              </div>
+
+              <div>
+                <label className="text-sm font-semibold text-gray-700">
+                  Quantity
+                </label>
+                <p className="text-gray-900">{selectedItem.item.quantity}</p>
+              </div>
+
+              <div>
+                <label className="text-sm font-semibold text-gray-700">
+                  Unit Price
+                </label>
+                <p className="text-gray-900">
+                  {(selectedItem.item.price || 0).toFixed(2)} kr
+                </p>
+              </div>
+
+              <div>
+                <label className="text-sm font-semibold text-gray-700">
+                  Total Price
+                </label>
+                <p className="text-gray-900 font-bold">
+                  {(
+                    (selectedItem.item.price || 0) * selectedItem.item.quantity
+                  ).toFixed(2)}{" "}
+                  kr
+                </p>
+              </div>
+
+              {selectedItem.productDetails?.description && (
+                <div>
+                  <label className="text-sm font-semibold text-gray-700">
+                    Description
+                  </label>
+                  <p className="text-gray-700 text-sm">
+                    {selectedItem.productDetails.description}
+                  </p>
+                </div>
+              )}
+
+              {selectedItem.item.type && (
+                <div>
+                  <label className="text-sm font-semibold text-gray-700">
+                    Type
+                  </label>
+                  <p className="text-gray-900">{selectedItem.item.type}</p>
+                </div>
+              )}
+            </div>
+
+            <button
+              onClick={() => setSelectedItem(null)}
+              className="mt-6 w-full bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 transition-colors"
+            >
+              Close
+            </button>
+          </div>
         </div>
       )}
     </div>
