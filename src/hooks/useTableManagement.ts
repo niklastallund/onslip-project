@@ -28,7 +28,7 @@ export function useTableManagement(initialTables: Table[] = []) {
   // Handle table drag end
   const handleDragEnd = (id: number, x: number, y: number) => {
     setTables((prevTables) =>
-      prevTables.map((t) => (t.id === id ? { ...t, x, y } : t))
+      prevTables.map((t) => (t.id === id ? { ...t, x, y } : t)),
     );
   };
 
@@ -41,8 +41,8 @@ export function useTableManagement(initialTables: Table[] = []) {
     const scaleY = node.scaleY();
 
     // Calculate new dimensions
-    const newWidth = Math.max(30, node.width() * scaleX);
-    const newHeight = Math.max(30, node.height() * scaleY);
+    const newWidth = Math.round(Math.max(30, node.width() * scaleX));
+    const newHeight = Math.round(Math.max(30, node.height() * scaleY));
 
     // Reset scale to 1
     node.scaleX(1);
@@ -59,8 +59,8 @@ export function useTableManagement(initialTables: Table[] = []) {
               height: newHeight,
               rotation: node.rotation(),
             }
-          : t
-      )
+          : t,
+      ),
     );
   };
 
@@ -70,8 +70,8 @@ export function useTableManagement(initialTables: Table[] = []) {
 
     setTables((prevTables) =>
       prevTables.map((t) =>
-        t.id === selectedId ? { ...t, locked: !t.locked } : t
-      )
+        t.id === selectedId ? { ...t, locked: !t.locked } : t,
+      ),
     );
   };
 
@@ -80,7 +80,7 @@ export function useTableManagement(initialTables: Table[] = []) {
     if (!selectedId) return;
 
     setTables((prevTables) =>
-      prevTables.map((t) => (t.id === selectedId ? { ...t, capacity } : t))
+      prevTables.map((t) => (t.id === selectedId ? { ...t, capacity } : t)),
     );
   };
 
@@ -90,8 +90,8 @@ export function useTableManagement(initialTables: Table[] = []) {
 
     setTables((prevTables) =>
       prevTables.map((t) =>
-        t.id === selectedId ? { ...t, availablePositions: positions } : t
-      )
+        t.id === selectedId ? { ...t, availablePositions: positions } : t,
+      ),
     );
   };
 

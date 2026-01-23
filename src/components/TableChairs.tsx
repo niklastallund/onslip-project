@@ -519,10 +519,6 @@ export default function TableChairs({
                               onClick={() => handleItemClick(item)}
                               className="shrink-0 w-32 bg-white p-3 rounded-lg border-2 border-blue-200 hover:border-blue-400 transition-all hover:shadow-md cursor-pointer relative"
                             >
-                              {/* Order number badge */}
-                              <div className="absolute -top-2 -left-2 bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">
-                                {index + 1}
-                              </div>
                               <div className="text-sm font-medium text-gray-800 truncate mb-1">
                                 {item["product-name"]}
                               </div>
