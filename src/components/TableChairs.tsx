@@ -466,7 +466,7 @@ export default function TableChairs({
 
       {/* Chair Details Section */}
       {selectedChair !== null && chairDetails.has(selectedChair) && (
-        <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg w-full max-w-md">
+        <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg w-full max-w-lg">
           <div className="flex justify-between items-start mb-2">
             <h3 className="font-semibold text-lg text-gray-800">
               Chair Details
