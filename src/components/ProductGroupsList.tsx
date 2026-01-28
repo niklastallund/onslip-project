@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
 interface Product {
@@ -15,13 +16,17 @@ interface ProductGroupsListProps {
   products: Product[];
   onProductClick: (productId: number) => Promise<void>;
   addingProductId: number | null;
+  currentState?: string;
 }
 
 export default function ProductGroupsList({
   products,
   onProductClick,
   addingProductId,
+  currentState,
 }: ProductGroupsListProps) {
+  const [showAll, setShowAll] = useState(false);
+
   // Group products by product group
   const groupProductsByGroup = () => {
     const grouped = new Map<string, Product[]>();
@@ -36,6 +41,48 @@ export default function ProductGroupsList({
 
     return grouped;
   };
+
+  // Filter product groups based on current state
+  const filterGroupsByState = (grouped: Map<string, Product[]>) => {
+    if (!currentState || showAll) return grouped;
+
+    const stateKey = currentState.split(":")[1]?.toLowerCase();
+    if (!stateKey) return grouped;
+
+    const filtered = new Map<string, Product[]>();
+
+    // If state starts with "food", only show Food group
+    if (stateKey.startsWith("food")) {
+      const foodProducts = grouped.get("Food");
+      if (foodProducts) {
+        filtered.set("Food", foodProducts);
+      }
+    }
+    // If state starts with "drinks", only show Drinks group
+    else if (stateKey.startsWith("drinks")) {
+      const drinksProducts = grouped.get("Drinks");
+      if (drinksProducts) {
+        filtered.set("Drinks", drinksProducts);
+      }
+    }
+    // For other states, show all groups
+    else {
+      return grouped;
+    }
+
+    return filtered;
+  };
+
+  // Check if filtering is active
+  const isFilteringActive = () => {
+    if (!currentState) return false;
+    const stateKey = currentState.split(":")[1]?.toLowerCase();
+    return (
+      stateKey?.startsWith("food") || stateKey?.startsWith("drinks") || false
+    );
+  };
+
+  const filteredGroups = filterGroupsByState(groupProductsByGroup());
 
   if (products.length === 0) {
     return (
@@ -52,7 +99,7 @@ export default function ProductGroupsList({
     <div className="pt-2 border-t border-blue-300">
       <h4 className="font-semibold text-gray-800 mb-3">Add Products</h4>
       <div className="space-y-4">
-        {Array.from(groupProductsByGroup().entries()).map(
+        {Array.from(filteredGroups.entries()).map(
           ([groupName, groupProducts]) => (
             <div key={groupName}>
               <h5 className="text-sm font-semibold text-gray-700 mb-2 capitalize">
@@ -90,6 +137,26 @@ export default function ProductGroupsList({
           ),
         )}
       </div>
+
+      {/* Show All button when filtering is active */}
+      {isFilteringActive() && !showAll && (
+        <button
+          onClick={() => setShowAll(true)}
+          className="mt-3 w-full py-2 px-4 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors text-sm font-medium"
+        >
+          Show All Product Groups
+        </button>
+      )}
+
+      {/* Show Filtered button when showing all during a filtered state */}
+      {isFilteringActive() && showAll && (
+        <button
+          onClick={() => setShowAll(false)}
+          className="mt-3 w-full py-2 px-4 bg-blue-200 text-blue-800 rounded hover:bg-blue-300 transition-colors text-sm font-medium"
+        >
+          Show Filtered Groups Only
+        </button>
+      )}
     </div>
   );
 }

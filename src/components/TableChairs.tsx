@@ -320,6 +320,7 @@ export default function TableChairs({
                   products={products}
                   onProductClick={handleProductClick}
                   addingProductId={addingProduct}
+                  currentState={currentState}
                 />
               </div>
             );
