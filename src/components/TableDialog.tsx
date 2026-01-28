@@ -13,7 +13,7 @@ import type { Table } from "../types/table";
 import TableChairs from "./TableChairs";
 import ChairPositionEditor from "./ChairPositionEditor";
 import { useState } from "react";
-import { Button } from "./ui/button";
+import { Separator } from "./ui/separator";
 
 interface TableDialogProps {
   table: Table | null;
@@ -57,6 +57,30 @@ export default function TableDialog({
         </DialogHeader>
 
         <ScrollArea className="max-h-[calc(90vh-8rem)] pr-4">
+          {/* State change controls */}
+
+          <h3 className="font-semibold mb-3">Change State</h3>
+          <div className="flex gap-2 mb-3">
+            <button
+              onClick={onPreviousState}
+              disabled={isLoading}
+              className="flex-1 flex items-center justify-center gap-2 p-3 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+              title="Previous state"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              Previous
+            </button>
+            <button
+              onClick={onNextState}
+              disabled={isLoading}
+              className="flex-1 flex items-center justify-center gap-2 p-3 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+              title="Next state"
+            >
+              Next
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+          <Separator className="my-3" />
           {/* Toggle between chair management and position editor */}
           <div className="flex gap-2 mb-4">
             <button
@@ -101,29 +125,6 @@ export default function TableDialog({
               availablePositions={table.availablePositions}
             />
           )}
-          {/* State change controls */}
-
-          <h3 className="font-semibold mb-3">Change State</h3>
-          <div className="flex gap-2">
-            <button
-              onClick={onPreviousState}
-              disabled={isLoading}
-              className="flex-1 flex items-center justify-center gap-2 p-3 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-              title="Previous state"
-            >
-              <ChevronLeft className="w-4 h-4" />
-              Previous
-            </button>
-            <button
-              onClick={onNextState}
-              disabled={isLoading}
-              className="flex-1 flex items-center justify-center gap-2 p-3 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-              title="Next state"
-            >
-              Next
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
 
           <div className="space-y-4">
             <div>
