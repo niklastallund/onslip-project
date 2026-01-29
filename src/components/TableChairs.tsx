@@ -68,10 +68,11 @@ export default function TableChairs({
   const [chairItems, setChairItems] = useState<Map<number, Item[]>>(new Map());
   const [products, setProducts] = useState<Product[]>([]);
   const [addingProduct, setAddingProduct] = useState<number | null>(null);
-  const [selectedItem, setSelectedItem] = useState<{
-    item: Item;
-    productDetails: Product | null;
-  } | null>(null);
+  const [dialogState, setDialogState] = useState<{
+    mode: "view" | "add";
+    item: Item | null;
+    product: Product | null;
+  }>({ mode: "view", item: null, product: null });
 
   // Use availablePositions if provided, otherwise allow all positions up to maxCapacity
   const allowedPositions = availablePositions
@@ -162,16 +163,16 @@ export default function TableChairs({
 
   const handleItemClick = async (item: Item) => {
     if (!item.product) {
-      setSelectedItem({ item, productDetails: null });
+      setDialogState({ mode: "view", item, product: null });
       return;
     }
 
     try {
       const productDetails = await getProduct(item.product);
-      setSelectedItem({ item, productDetails });
+      setDialogState({ mode: "view", item, product: productDetails });
     } catch (error) {
       console.error("Failed to load product details:", error);
-      setSelectedItem({ item, productDetails: null });
+      setDialogState({ mode: "view", item, product: null });
     }
   };
 
@@ -244,19 +245,42 @@ export default function TableChairs({
     }
   };
 
-  const handleProductClick = async (productId: number) => {
+  const handleProductClick = (product: Product) => {
+    setDialogState({ mode: "add", item: null, product });
+  };
+
+  const handleQuantityConfirm = async (quantity: number) => {
     if (selectedChair === null) return;
 
     const chair = chairs.get(selectedChair);
     if (!chair) return;
 
     try {
-      setAddingProduct(productId);
-      await addProductToChair(chair.chairId, productId);
+      setAddingProduct(dialogState.product?.id || null);
+
+      if (dialogState.mode === "add" && dialogState.product) {
+        // Adding new product with specified quantity
+        await addProductToChair(
+          chair.chairId,
+          dialogState.product.id,
+          quantity,
+        );
+      } else if (dialogState.mode === "view" && dialogState.item) {
+        // TODO: Updating existing item quantity - need to implement this
+        // For now, we'll just add the product again with the new quantity
+        if (dialogState.item.product) {
+          await addProductToChair(
+            chair.chairId,
+            dialogState.item.product,
+            quantity,
+          );
+        }
+      }
+
       await loadChairItems(chair.chairId, selectedChair);
     } catch (error) {
-      console.error("Failed to add product:", error);
-      alert("Failed to add product. Please try again.");
+      console.error("Failed to add/update product:", error);
+      alert("Failed to add/update product. Please try again.");
     } finally {
       setAddingProduct(null);
     }
@@ -329,9 +353,13 @@ export default function TableChairs({
       )}
 
       <ItemDetailsDialog
-        item={selectedItem?.item || null}
-        productDetails={selectedItem?.productDetails || null}
-        onClose={() => setSelectedItem(null)}
+        item={dialogState.item}
+        product={dialogState.product}
+        mode={dialogState.mode}
+        onClose={() =>
+          setDialogState({ mode: "view", item: null, product: null })
+        }
+        onQuantityChange={handleQuantityConfirm}
       />
     </div>
   );

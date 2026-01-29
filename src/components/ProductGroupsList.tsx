@@ -14,7 +14,7 @@ interface Product {
 
 interface ProductGroupsListProps {
   products: Product[];
-  onProductClick: (productId: number) => Promise<void>;
+  onProductClick: (product: Product) => void;
   addingProductId: number | null;
   currentState?: string;
 }
@@ -110,7 +110,7 @@ export default function ProductGroupsList({
                   {groupProducts.map((product: Product) => (
                     <button
                       key={product.id}
-                      onClick={() => onProductClick(product.id)}
+                      onClick={() => onProductClick(product)}
                       disabled={addingProductId === product.id}
                       className="shrink-0 w-32 p-2 bg-linear-to-br from-blue-50 to-blue-100 border border-blue-300 rounded hover:from-blue-100 hover:to-blue-200 hover:border-blue-400 transition-all text-xs disabled:opacity-50 disabled:cursor-not-allowed"
                       title={product.description || product.name}

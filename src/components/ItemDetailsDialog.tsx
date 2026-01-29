@@ -1,12 +1,15 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 interface Item {
   product?: number;
@@ -27,41 +30,97 @@ interface Product {
 
 interface ItemDetailsDialogProps {
   item: Item | null;
-  productDetails: Product | null;
+  product: Product | null;
   onClose: () => void;
+  onQuantityChange?: (quantity: number) => void;
+  mode: "view" | "add";
 }
 
 export default function ItemDetailsDialog({
   item,
-  productDetails,
+  product,
   onClose,
+  onQuantityChange,
+  mode,
 }: ItemDetailsDialogProps) {
+  const [quantity, setQuantity] = useState(1);
+
+  // Reset quantity when dialog opens with new item/product
+  useEffect(() => {
+    if (mode === "view" && item) {
+      setQuantity(item.quantity);
+    } else if (mode === "add") {
+      setQuantity(1);
+    }
+  }, [item, mode]);
+
+  const displayName = item?.["product-name"] || product?.name || "";
+  const displayPrice = item?.price || product?.price || 0;
+  const displayDescription = product?.description || "";
+
+  const handleDecrement = () => {
+    if (quantity > 1) {
+      setQuantity(quantity - 1);
+    }
+  };
+
+  const handleIncrement = () => {
+    setQuantity(quantity + 1);
+  };
+
+  const handleConfirm = () => {
+    if (onQuantityChange) {
+      onQuantityChange(quantity);
+    }
+    onClose();
+  };
+
+  const isOpen = item !== null || product !== null;
+
   return (
-    <Dialog open={item !== null} onOpenChange={(open) => !open && onClose()}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Item Details</DialogTitle>
-          <DialogDescription>{item?.["product-name"]}</DialogDescription>
+          <DialogTitle>
+            {mode === "view" ? "Item Details" : "Add Product"}
+          </DialogTitle>
+          <DialogDescription>{displayName}</DialogDescription>
         </DialogHeader>
 
-        {item && (
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-semibold text-gray-700">
-                  Quantity
-                </label>
-                <p className="text-gray-900">{item.quantity}</p>
-              </div>
+        <div className="space-y-4">
+          {/* Quantity Control */}
+          <div>
+            <label className="text-sm font-semibold text-gray-700 block mb-2">
+              Quantity
+            </label>
+            <div className="flex items-center gap-4">
+              <button
+                onClick={handleDecrement}
+                disabled={quantity <= 1}
+                className="w-10 h-10 flex items-center justify-center bg-gray-200 hover:bg-gray-300 disabled:bg-gray-100 disabled:text-gray-400 rounded-md font-bold text-lg transition-colors"
+                aria-label="Decrease quantity"
+              >
+                −
+              </button>
+              <span className="text-2xl font-bold text-gray-900 min-w-12 text-center">
+                {quantity}
+              </span>
+              <button
+                onClick={handleIncrement}
+                className="w-10 h-10 flex items-center justify-center bg-gray-200 hover:bg-gray-300 rounded-md font-bold text-lg transition-colors"
+                aria-label="Increase quantity"
+              >
+                +
+              </button>
+            </div>
+          </div>
 
-              <div>
-                <label className="text-sm font-semibold text-gray-700">
-                  Unit Price
-                </label>
-                <p className="text-gray-900">
-                  {(item.price || 0).toFixed(2)} kr
-                </p>
-              </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm font-semibold text-gray-700">
+                Unit Price
+              </label>
+              <p className="text-gray-900">{displayPrice.toFixed(2)} kr</p>
             </div>
 
             <div>
@@ -69,22 +128,29 @@ export default function ItemDetailsDialog({
                 Total Price
               </label>
               <p className="text-gray-900 font-bold text-lg">
-                {((item.price || 0) * item.quantity).toFixed(2)} kr
+                {(displayPrice * quantity).toFixed(2)} kr
               </p>
             </div>
-
-            {productDetails?.description && (
-              <div>
-                <label className="text-sm font-semibold text-gray-700">
-                  Description
-                </label>
-                <p className="text-gray-700 text-sm mt-1">
-                  {productDetails.description}
-                </p>
-              </div>
-            )}
           </div>
-        )}
+
+          {displayDescription && (
+            <div>
+              <label className="text-sm font-semibold text-gray-700">
+                Description
+              </label>
+              <p className="text-gray-700 text-sm mt-1">{displayDescription}</p>
+            </div>
+          )}
+        </div>
+
+        <DialogFooter className="gap-2">
+          <Button variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button onClick={handleConfirm}>
+            {mode === "view" ? "Update Quantity" : "Add to Order"}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
