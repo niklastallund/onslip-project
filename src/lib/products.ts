@@ -96,7 +96,11 @@ export async function updateProduct(
   }
 }
 
-export async function addProductToChair(chairId: number, productId: number) {
+export async function addProductToChair(
+  chairId: number,
+  productId: number,
+  quantity: number = 1,
+) {
   try {
     // Get the current tab/chair
     const tab = await api.getTab(chairId);
@@ -120,7 +124,7 @@ export async function addProductToChair(chairId: number, productId: number) {
       product: productId,
       "product-name": product.name,
       type: productGroup.type || ("goods" as const),
-      quantity: product["default-quantity"] || 1,
+      quantity: quantity,
       price: product.price || 0,
     };
 

@@ -8,12 +8,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Info } from "lucide-react";
 import type { Table } from "../types/table";
 import TableChairs from "./TableChairs";
 import ChairPositionEditor from "./ChairPositionEditor";
 import { useState } from "react";
 import { Separator } from "./ui/separator";
+import { Button } from "./ui/button";
 
 interface TableDialogProps {
   table: Table | null;
@@ -35,6 +36,7 @@ export default function TableDialog({
   onUpdateAvailablePositions,
 }: TableDialogProps) {
   const [editingPositions, setEditingPositions] = useState(false);
+  const [showTableInfo, setShowTableInfo] = useState(false);
 
   if (!table) return null;
 
@@ -126,6 +128,28 @@ export default function TableDialog({
             />
           )}
 
+          {/* Table Information Button */}
+          <Button
+            onClick={() => setShowTableInfo(true)}
+            variant="outline"
+            className="w-full mt-4 flex items-center justify-center gap-2"
+          >
+            <Info className="w-4 h-4" />
+            View Table Information
+          </Button>
+        </ScrollArea>
+      </DialogContent>
+
+      {/* Table Information Dialog */}
+      <Dialog open={showTableInfo} onOpenChange={setShowTableInfo}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Table Information</DialogTitle>
+            <DialogDescription>
+              Details for table {table.name}
+            </DialogDescription>
+          </DialogHeader>
+
           <div className="space-y-4">
             <div>
               <h3 className="font-semibold">ID:</h3>
@@ -167,8 +191,8 @@ export default function TableDialog({
               <p>{table.locked ? "Yes" : "No"}</p>
             </div>
           </div>
-        </ScrollArea>
-      </DialogContent>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }
