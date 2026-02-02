@@ -34,6 +34,8 @@ interface ItemDetailsDialogProps {
   onClose: () => void;
   onQuantityChange?: (quantity: number) => void;
   onAddMore?: (quantity: number) => void;
+  onSplit?: () => void;
+  onDelete?: () => void;
   mode: "view" | "add";
 }
 
@@ -43,6 +45,8 @@ export default function ItemDetailsDialog({
   onClose,
   onQuantityChange,
   onAddMore,
+  onSplit,
+  onDelete,
   mode,
 }: ItemDetailsDialogProps) {
   const [quantity, setQuantity] = useState(1);
@@ -244,13 +248,44 @@ export default function ItemDetailsDialog({
           )}
         </div>
 
-        <DialogFooter className="gap-2">
-          <Button variant="outline" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button onClick={mode === "view" ? handleAddMore : handleConfirm}>
-            {mode === "view" ? "Add More to Order" : "Add to Order"}
-          </Button>
+        <DialogFooter className="gap-2 sm:gap-2">
+          <div className="flex w-full gap-2 flex-col sm:flex-row sm:justify-between">
+            <div className="flex gap-2">
+              {mode === "view" && onDelete && (
+                <Button
+                  variant="destructive"
+                  onClick={onDelete}
+                  className="flex-1 sm:flex-none"
+                >
+                  Delete
+                </Button>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={onClose}
+                className="flex-1 sm:flex-none"
+              >
+                Cancel
+              </Button>
+              {mode === "view" && onSplit && (
+                <Button
+                  variant="secondary"
+                  onClick={onSplit}
+                  className="flex-1 sm:flex-none"
+                >
+                  Split
+                </Button>
+              )}
+              <Button
+                onClick={mode === "view" ? handleAddMore : handleConfirm}
+                className="flex-1 sm:flex-none"
+              >
+                {mode === "view" ? "Add More" : "Add to Order"}
+              </Button>
+            </div>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

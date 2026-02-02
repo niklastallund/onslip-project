@@ -8,11 +8,24 @@ import {
   listAllProducts,
   addProductToChair,
   getProduct,
+  splitItemBetweenChairs,
+  deleteItemFromChair,
 } from "@/lib/products";
 import ChairGrid from "./ChairGrid";
 import ChairItemsList from "./ChairItemsList";
 import ProductGroupsList from "./ProductGroupsList";
 import ItemDetailsDialog from "./ItemDetailsDialog";
+import SplitItemDialog from "./SplitItemDialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface ChairDetails {
   id: number;
@@ -73,6 +86,21 @@ export default function TableChairs({
     item: Item | null;
     product: Product | null;
   }>({ mode: "view", item: null, product: null });
+  const [splitDialogState, setSplitDialogState] = useState<{
+    item: Item | null;
+    sourceChairId: number | null;
+    itemIndex: number;
+  }>({ item: null, sourceChairId: null, itemIndex: -1 });
+  const [itemContext, setItemContext] = useState<{
+    item: Item | null;
+    sourceChairId: number | null;
+    itemIndex: number;
+  }>({ item: null, sourceChairId: null, itemIndex: -1 });
+  const [alertDialog, setAlertDialog] = useState<{
+    isOpen: boolean;
+    type: "delete" | "alreadySplit" | null;
+    onConfirm?: () => void;
+  }>({ isOpen: false, type: null });
 
   // Use availablePositions if provided, otherwise allow all positions up to maxCapacity
   const allowedPositions = availablePositions
@@ -161,7 +189,7 @@ export default function TableChairs({
     }
   };
 
-  const handleItemClick = async (item: Item) => {
+  const handleItemClick = async (item: Item, itemIndex?: number) => {
     if (!item.product) {
       setDialogState({ mode: "view", item, product: null });
       return;
@@ -170,6 +198,18 @@ export default function TableChairs({
     try {
       const productDetails = await getProduct(item.product);
       setDialogState({ mode: "view", item, product: productDetails });
+
+      // Store item context for potential split operation
+      if (itemIndex !== undefined && selectedChair !== null) {
+        const chair = chairs.get(selectedChair);
+        if (chair) {
+          setItemContext({
+            item,
+            sourceChairId: chair.chairId,
+            itemIndex,
+          });
+        }
+      }
     } catch (error) {
       console.error("Failed to load product details:", error);
       setDialogState({ mode: "view", item, product: null });
@@ -299,6 +339,105 @@ export default function TableChairs({
     }
   };
 
+  const handleDeleteItem = () => {
+    if (selectedChair === null) return;
+    if (!itemContext || itemContext.itemIndex === undefined) {
+      return;
+    }
+
+    const chair = chairs.get(selectedChair);
+    if (!chair) return;
+
+    // Show confirmation dialog
+    setAlertDialog({
+      isOpen: true,
+      type: "delete",
+      onConfirm: async () => {
+        try {
+          // Delete the item from the chair's tab
+          await deleteItemFromChair(chair.chairId, itemContext.itemIndex);
+
+          // Reload the chair's items to reflect the deletion
+          await loadChairItems(chair.chairId, selectedChair);
+
+          // Close the dialog and clear context
+          setDialogState({ mode: "view", item: null, product: null });
+          setItemContext({ item: null, sourceChairId: null, itemIndex: -1 });
+        } catch (error) {
+          console.error("Failed to delete item:", error);
+          alert("Failed to delete item. Please try again.");
+        }
+      },
+    });
+  };
+
+  const handleSplitClick = () => {
+    // Check if item is already split
+    const itemName = itemContext.item?.["product-name"] || "";
+    if (itemName.includes("(Split") && itemName.includes("ways)")) {
+      setAlertDialog({
+        isOpen: true,
+        type: "alreadySplit",
+      });
+      return;
+    }
+
+    // Open split dialog with stored context
+    setSplitDialogState(itemContext);
+    // Close the item details dialog
+    setDialogState({ mode: "view", item: null, product: null });
+  };
+
+  const handleSplitConfirm = async (
+    targetChairIds: number[],
+    sharePerChair: number,
+  ) => {
+    if (
+      splitDialogState.sourceChairId === null ||
+      splitDialogState.itemIndex < 0
+    ) {
+      return;
+    }
+
+    try {
+      await splitItemBetweenChairs(
+        splitDialogState.sourceChairId,
+        targetChairIds,
+        splitDialogState.itemIndex,
+        sharePerChair,
+      );
+
+      // Reload items for all affected chairs
+      if (selectedChair !== null) {
+        const chair = chairs.get(selectedChair);
+        if (chair) {
+          await loadChairItems(chair.chairId, selectedChair);
+        }
+      }
+
+      // Reload items for target chairs
+      for (const targetChairId of targetChairIds) {
+        const targetChairEntry = Array.from(chairs.entries()).find(
+          ([, chair]) => chair.chairId === targetChairId,
+        );
+        if (targetChairEntry) {
+          const [position] = targetChairEntry;
+          await loadChairItems(targetChairId, position);
+        }
+      }
+
+      // Clear split dialog state
+      setSplitDialogState({ item: null, sourceChairId: null, itemIndex: -1 });
+    } catch (error) {
+      console.error("Failed to split item:", error);
+      alert("Failed to split item. Please try again.");
+    }
+  };
+
+  const handleSplitClose = () => {
+    setSplitDialogState({ item: null, sourceChairId: null, itemIndex: -1 });
+  };
+
   return (
     <div className="flex flex-col items-center justify-center w-full min-h-[300px] p-8 border border-gray-500 rounded-lg">
       <ChairGrid
@@ -374,7 +513,62 @@ export default function TableChairs({
         }
         onQuantityChange={handleQuantityConfirm}
         onAddMore={handleAddMore}
+        onSplit={handleSplitClick}
+        onDelete={handleDeleteItem}
       />
+
+      <SplitItemDialog
+        item={splitDialogState.item}
+        sourceChairId={splitDialogState.sourceChairId}
+        sourceChairPosition={selectedChair}
+        occupiedChairs={chairs}
+        tableName={name}
+        tableWidth={width}
+        tableHeight={height}
+        maxCapacity={maxCapacity}
+        currentState={currentState}
+        allowedPositions={allowedPositions}
+        onClose={handleSplitClose}
+        onConfirm={handleSplitConfirm}
+      />
+
+      <AlertDialog
+        open={alertDialog.isOpen}
+        onOpenChange={(open) => setAlertDialog({ isOpen: open, type: null })}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {alertDialog.type === "delete"
+                ? "Delete Item"
+                : "Item Already Split"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {alertDialog.type === "delete"
+                ? "Are you sure you want to delete this item from the order? This action cannot be undone."
+                : "This item has already been split. To modify the split, you need to remove the split items and create a new split."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={() => setAlertDialog({ isOpen: false, type: null })}
+            >
+              Cancel
+            </AlertDialogCancel>
+            {alertDialog.type === "delete" && (
+              <AlertDialogAction
+                variant="destructive"
+                onClick={() => {
+                  alertDialog.onConfirm?.();
+                  setAlertDialog({ isOpen: false, type: null });
+                }}
+              >
+                Delete
+              </AlertDialogAction>
+            )}
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
