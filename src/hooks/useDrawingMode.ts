@@ -113,8 +113,8 @@ export function useDrawingMode({
     if (!pointer) return;
 
     const start = drawStartRef.current;
-    const width = Math.abs(pointer.x - start.x);
-    const height = Math.abs(pointer.y - start.y);
+    const width = Math.round(Math.abs(pointer.x - start.x));
+    const height = Math.round(Math.abs(pointer.y - start.y));
 
     // Only create table if it has meaningful dimensions
     if (width > 10 && height > 10) {
@@ -122,8 +122,8 @@ export function useDrawingMode({
       const newTable = createTable({
         id,
         name: getTableName(id),
-        x: Math.min(start.x, pointer.x),
-        y: Math.min(start.y, pointer.y),
+        x: Math.round(Math.min(start.x, pointer.x)),
+        y: Math.round(Math.min(start.y, pointer.y)),
         width,
         height,
       });
