@@ -34,6 +34,7 @@ interface ItemDetailsDialogProps {
   onClose: () => void;
   onQuantityChange?: (quantity: number) => void;
   onAddMore?: (quantity: number) => void;
+  onSplit?: () => void;
   mode: "view" | "add";
 }
 
@@ -43,6 +44,7 @@ export default function ItemDetailsDialog({
   onClose,
   onQuantityChange,
   onAddMore,
+  onSplit,
   mode,
 }: ItemDetailsDialogProps) {
   const [quantity, setQuantity] = useState(1);
@@ -248,6 +250,11 @@ export default function ItemDetailsDialog({
           <Button variant="outline" onClick={onClose}>
             Cancel
           </Button>
+          {mode === "view" && onSplit && (
+            <Button variant="secondary" onClick={onSplit}>
+              Split Item
+            </Button>
+          )}
           <Button onClick={mode === "view" ? handleAddMore : handleConfirm}>
             {mode === "view" ? "Add More to Order" : "Add to Order"}
           </Button>

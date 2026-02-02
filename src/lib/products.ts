@@ -157,3 +157,71 @@ export async function getChairItems(chairId: number) {
     return [];
   }
 }
+
+export async function splitItemBetweenChairs(
+  sourceChairId: number,
+  targetChairIds: number[],
+  itemIndex: number,
+  sharePerChair: number,
+) {
+  try {
+    // Get source chair/tab
+    const sourceTab = await api.getTab(sourceChairId);
+    if (!sourceTab) {
+      throw new Error(`Source chair with ID ${sourceChairId} not found`);
+    }
+
+    const items = sourceTab.items || [];
+    if (itemIndex < 0 || itemIndex >= items.length) {
+      throw new Error(`Invalid item index: ${itemIndex}`);
+    }
+
+    const originalItem = items[itemIndex];
+    const allChairIds = [sourceChairId, ...targetChairIds];
+
+    // Create split indicator in product name and comment
+    const splitIndicator = `(Split ${allChairIds.length} ways)`;
+    const splitComment = `Split between chairs: ${allChairIds.join(", ")}. Original price: ${(originalItem.price || 0).toFixed(2)} kr`;
+
+    // Update the source chair's item with split info and reduced price
+    const updatedSourceItems = [...items];
+    updatedSourceItems[itemIndex] = {
+      ...originalItem,
+      price: sharePerChair,
+      "product-name": `${originalItem["product-name"]} ${splitIndicator}`,
+      comment: splitComment,
+    };
+
+    await api.updateTab(sourceChairId, {
+      items: updatedSourceItems,
+    });
+
+    // Add split items to target chairs
+    for (const targetChairId of targetChairIds) {
+      const targetTab = await api.getTab(targetChairId);
+      if (!targetTab) {
+        console.error(`Target chair ${targetChairId} not found, skipping`);
+        continue;
+      }
+
+      const targetItems = targetTab.items || [];
+      const splitItem = {
+        product: originalItem.product,
+        "product-name": `${originalItem["product-name"]} ${splitIndicator}`,
+        type: originalItem.type,
+        quantity: originalItem.quantity,
+        price: sharePerChair,
+        comment: splitComment,
+      };
+
+      await api.updateTab(targetChairId, {
+        items: [...targetItems, splitItem],
+      });
+    }
+
+    return true;
+  } catch (error) {
+    console.error("Failed to split item:", error);
+    throw error;
+  }
+}
