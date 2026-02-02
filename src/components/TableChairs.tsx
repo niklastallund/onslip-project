@@ -9,6 +9,7 @@ import {
   addProductToChair,
   getProduct,
   splitItemBetweenChairs,
+  deleteItemFromChair,
 } from "@/lib/products";
 import ChairGrid from "./ChairGrid";
 import ChairItemsList from "./ChairItemsList";
@@ -323,6 +324,38 @@ export default function TableChairs({
     }
   };
 
+  const handleDeleteItem = async () => {
+    if (selectedChair === null) return;
+    if (!itemContext || itemContext.itemIndex === undefined) {
+      alert("Cannot delete item: missing item information");
+      return;
+    }
+
+    const chair = chairs.get(selectedChair);
+    if (!chair) return;
+
+    const confirmDelete = window.confirm(
+      "Are you sure you want to delete this item from the order?",
+    );
+
+    if (!confirmDelete) return;
+
+    try {
+      // Delete the item from the chair's tab
+      await deleteItemFromChair(chair.chairId, itemContext.itemIndex);
+
+      // Reload the chair's items to reflect the deletion
+      await loadChairItems(chair.chairId, selectedChair);
+
+      // Close the dialog and clear context
+      setDialogState({ mode: "view", item: null, product: null });
+      setItemContext({ item: null, sourceChairId: null, itemIndex: -1 });
+    } catch (error) {
+      console.error("Failed to delete item:", error);
+      alert("Failed to delete item. Please try again.");
+    }
+  };
+
   const handleSplitClick = () => {
     // Check if item is already split
     const itemName = itemContext.item?.["product-name"] || "";
@@ -465,6 +498,7 @@ export default function TableChairs({
         onQuantityChange={handleQuantityConfirm}
         onAddMore={handleAddMore}
         onSplit={handleSplitClick}
+        onDelete={handleDeleteItem}
       />
 
       <SplitItemDialog

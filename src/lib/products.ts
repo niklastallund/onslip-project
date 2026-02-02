@@ -158,6 +158,40 @@ export async function getChairItems(chairId: number) {
   }
 }
 
+export async function deleteItemFromChair(chairId: number, itemIndex: number) {
+  try {
+    // Get the current tab/chair
+    const tab = await api.getTab(chairId);
+
+    if (!tab) {
+      throw new Error(`Chair with ID ${chairId} not found`);
+    }
+
+    // Get existing items
+    const existingItems = tab.items || [];
+
+    if (itemIndex < 0 || itemIndex >= existingItems.length) {
+      throw new Error(`Invalid item index ${itemIndex}`);
+    }
+
+    // Remove the item at the specified index
+    const updatedItems = [
+      ...existingItems.slice(0, itemIndex),
+      ...existingItems.slice(itemIndex + 1),
+    ];
+
+    // Update the tab with the modified items array
+    const updatedTab = await api.updateTab(chairId, {
+      items: updatedItems,
+    });
+
+    return JSON.parse(JSON.stringify(updatedTab));
+  } catch (error) {
+    console.error(`Failed to delete item from chair ${chairId}:`, error);
+    throw error;
+  }
+}
+
 export async function splitItemBetweenChairs(
   sourceChairId: number,
   targetChairIds: number[],
