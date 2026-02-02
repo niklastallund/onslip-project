@@ -16,6 +16,16 @@ import ChairItemsList from "./ChairItemsList";
 import ProductGroupsList from "./ProductGroupsList";
 import ItemDetailsDialog from "./ItemDetailsDialog";
 import SplitItemDialog from "./SplitItemDialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface ChairDetails {
   id: number;
@@ -86,6 +96,11 @@ export default function TableChairs({
     sourceChairId: number | null;
     itemIndex: number;
   }>({ item: null, sourceChairId: null, itemIndex: -1 });
+  const [alertDialog, setAlertDialog] = useState<{
+    isOpen: boolean;
+    type: "delete" | "alreadySplit" | null;
+    onConfirm?: () => void;
+  }>({ isOpen: false, type: null });
 
   // Use availablePositions if provided, otherwise allow all positions up to maxCapacity
   const allowedPositions = availablePositions
@@ -324,45 +339,46 @@ export default function TableChairs({
     }
   };
 
-  const handleDeleteItem = async () => {
+  const handleDeleteItem = () => {
     if (selectedChair === null) return;
     if (!itemContext || itemContext.itemIndex === undefined) {
-      alert("Cannot delete item: missing item information");
       return;
     }
 
     const chair = chairs.get(selectedChair);
     if (!chair) return;
 
-    const confirmDelete = window.confirm(
-      "Are you sure you want to delete this item from the order?",
-    );
+    // Show confirmation dialog
+    setAlertDialog({
+      isOpen: true,
+      type: "delete",
+      onConfirm: async () => {
+        try {
+          // Delete the item from the chair's tab
+          await deleteItemFromChair(chair.chairId, itemContext.itemIndex);
 
-    if (!confirmDelete) return;
+          // Reload the chair's items to reflect the deletion
+          await loadChairItems(chair.chairId, selectedChair);
 
-    try {
-      // Delete the item from the chair's tab
-      await deleteItemFromChair(chair.chairId, itemContext.itemIndex);
-
-      // Reload the chair's items to reflect the deletion
-      await loadChairItems(chair.chairId, selectedChair);
-
-      // Close the dialog and clear context
-      setDialogState({ mode: "view", item: null, product: null });
-      setItemContext({ item: null, sourceChairId: null, itemIndex: -1 });
-    } catch (error) {
-      console.error("Failed to delete item:", error);
-      alert("Failed to delete item. Please try again.");
-    }
+          // Close the dialog and clear context
+          setDialogState({ mode: "view", item: null, product: null });
+          setItemContext({ item: null, sourceChairId: null, itemIndex: -1 });
+        } catch (error) {
+          console.error("Failed to delete item:", error);
+          alert("Failed to delete item. Please try again.");
+        }
+      },
+    });
   };
 
   const handleSplitClick = () => {
     // Check if item is already split
     const itemName = itemContext.item?.["product-name"] || "";
     if (itemName.includes("(Split") && itemName.includes("ways)")) {
-      alert(
-        "This item has already been split. To modify the split, you need to remove the split items and create a new split.",
-      );
+      setAlertDialog({
+        isOpen: true,
+        type: "alreadySplit",
+      });
       return;
     }
 
@@ -515,6 +531,44 @@ export default function TableChairs({
         onClose={handleSplitClose}
         onConfirm={handleSplitConfirm}
       />
+
+      <AlertDialog
+        open={alertDialog.isOpen}
+        onOpenChange={(open) => setAlertDialog({ isOpen: open, type: null })}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {alertDialog.type === "delete"
+                ? "Delete Item"
+                : "Item Already Split"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {alertDialog.type === "delete"
+                ? "Are you sure you want to delete this item from the order? This action cannot be undone."
+                : "This item has already been split. To modify the split, you need to remove the split items and create a new split."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={() => setAlertDialog({ isOpen: false, type: null })}
+            >
+              Cancel
+            </AlertDialogCancel>
+            {alertDialog.type === "delete" && (
+              <AlertDialogAction
+                variant="destructive"
+                onClick={() => {
+                  alertDialog.onConfirm?.();
+                  setAlertDialog({ isOpen: false, type: null });
+                }}
+              >
+                Delete
+              </AlertDialogAction>
+            )}
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
