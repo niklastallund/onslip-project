@@ -1,7 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { createChair, getChair, getTableChairs } from "@/lib/chairs";
+import {
+  createChair,
+  getChair,
+  getTableChairs,
+  restartTable,
+} from "@/lib/chairs";
 import type { Chair } from "@/types/table";
 import {
   getChairItems,
@@ -10,12 +15,14 @@ import {
   getProduct,
   splitItemBetweenChairs,
   deleteItemFromChair,
+  combineTabsAndPay,
 } from "@/lib/products";
 import ChairGrid from "./ChairGrid";
 import ChairItemsList from "./ChairItemsList";
 import ProductGroupsList from "./ProductGroupsList";
 import ItemDetailsDialog from "./ItemDetailsDialog";
 import SplitItemDialog from "./SplitItemDialog";
+import CombinePayDialog from "./CombinePayDialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,6 +33,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 
 interface ChairDetails {
   id: number;
@@ -101,6 +109,8 @@ export default function TableChairs({
     type: "delete" | "alreadySplit" | null;
     onConfirm?: () => void;
   }>({ isOpen: false, type: null });
+  const [combinePayDialogOpen, setCombinePayDialogOpen] = useState(false);
+  const [showRestartConfirm, setShowRestartConfirm] = useState(false);
 
   // Use availablePositions if provided, otherwise allow all positions up to maxCapacity
   const allowedPositions = availablePositions
@@ -438,8 +448,89 @@ export default function TableChairs({
     setSplitDialogState({ item: null, sourceChairId: null, itemIndex: -1 });
   };
 
+  const handleCombinePayConfirm = async (chairIds: number[]) => {
+    try {
+      const result = await combineTabsAndPay(chairIds);
+
+      if (!result.success) {
+        alert(`Failed to combine tabs: ${result.error}`);
+        return;
+      }
+
+      // Reload chairs to reflect the changes
+      await loadExistingChairs();
+
+      // Clear selection
+      setSelectedChair(null);
+      setCombinePayDialogOpen(false);
+
+      alert("Payment processed successfully!");
+    } catch (error) {
+      console.error("Failed to combine tabs:", error);
+      alert("Failed to process payment. Please try again.");
+    }
+  };
+
+  // Check if all existing chairs (not empty positions) are paid
+  const allChairsPaid = () => {
+    // chairs Map only contains occupied positions with actual chairs
+    if (chairs.size === 0) return false;
+
+    // Check if every chair in the Map has [PAID-] prefix in its name
+    return Array.from(chairs.values()).every((chair) => {
+      return chair.name?.startsWith("[PAID-") || false;
+    });
+  };
+
+  const handleRestartTable = async () => {
+    if (!orderId) return;
+
+    try {
+      const result = await restartTable(orderId);
+
+      if (!result.success) {
+        alert(`Failed to restart table: ${result.error}`);
+        return;
+      }
+
+      // Reload chairs to show empty table
+      await loadExistingChairs();
+      setSelectedChair(null);
+      setShowRestartConfirm(false);
+
+      alert(
+        `Table restarted successfully! ${result.removedChairs} chairs removed.`,
+      );
+    } catch (error) {
+      console.error("Failed to restart table:", error);
+      alert("Failed to restart table. Please try again.");
+    }
+  };
+
   return (
     <div className="flex flex-col items-center justify-center w-full min-h-[300px] p-8 border border-gray-500 rounded-lg">
+      {/* Show Restart Table button if all chairs are paid, otherwise show Process Payment */}
+      {chairs.size >= 1 && (
+        <div className="mb-4 w-full flex justify-center">
+          {allChairsPaid() ? (
+            <Button
+              onClick={() => setShowRestartConfirm(true)}
+              className="bg-blue-600 hover:bg-blue-700"
+              size="lg"
+            >
+              Restart Table
+            </Button>
+          ) : (
+            <Button
+              onClick={() => setCombinePayDialogOpen(true)}
+              className="bg-green-600 hover:bg-green-700"
+              size="lg"
+            >
+              Process Payment
+            </Button>
+          )}
+        </div>
+      )}
       <ChairGrid
         name={name}
         width={width}
@@ -479,6 +570,9 @@ export default function TableChairs({
             const items = chairItems.get(selectedChair) || [];
             if (!details) return null;
 
+            // Check if chair is paid
+            const isPaid = details.name?.startsWith("[PAID-") || false;
+
             return (
               <div className="space-y-3 text-sm">
                 <div>
@@ -490,14 +584,36 @@ export default function TableChairs({
                   <span className="text-gray-600">{details.id}</span>
                 </div>
 
-                <ChairItemsList items={items} onItemClick={handleItemClick} />
+                {isPaid && (
+                  <div className="p-3 bg-purple-100 border border-purple-300 rounded-md">
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl">✓</span>
+                      <div>
+                        <div className="font-semibold text-purple-800">
+                          This tab has been paid
+                        </div>
+                        <div className="text-xs text-purple-600 mt-1">
+                          Items are shown for reference only. No changes can be
+                          made.
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
-                <ProductGroupsList
-                  products={products}
-                  onProductClick={handleProductClick}
-                  addingProductId={addingProduct}
-                  currentState={currentState}
+                <ChairItemsList
+                  items={items}
+                  onItemClick={isPaid ? undefined : handleItemClick}
                 />
+
+                {!isPaid && (
+                  <ProductGroupsList
+                    products={products}
+                    onProductClick={handleProductClick}
+                    addingProductId={addingProduct}
+                    currentState={currentState}
+                  />
+                )}
               </div>
             );
           })()}
@@ -566,6 +682,46 @@ export default function TableChairs({
                 Delete
               </AlertDialogAction>
             )}
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <CombinePayDialog
+        isOpen={combinePayDialogOpen}
+        occupiedChairs={chairs}
+        tableName={name}
+        tableWidth={width}
+        tableHeight={height}
+        currentState={currentState}
+        allowedPositions={allowedPositions}
+        onClose={() => setCombinePayDialogOpen(false)}
+        onConfirm={handleCombinePayConfirm}
+      />
+
+      {/* Restart Table Confirmation */}
+      <AlertDialog
+        open={showRestartConfirm}
+        onOpenChange={setShowRestartConfirm}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Restart Table?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will remove all paid chairs and prepare the table for new
+              guests. All payment history will be cleared from this table. This
+              action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setShowRestartConfirm(false)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleRestartTable}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              Restart Table
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
