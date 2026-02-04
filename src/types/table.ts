@@ -23,18 +23,33 @@ export interface Chair {
   name?: string; // Chair name
 }
 
+// Import this function from tableHelpers
+import { calculateMaxChairPositions } from "../lib/tableHelpers";
+
 export function createTable(opts?: Partial<Table>): Table {
   const id = opts?.id ?? Date.now();
+  const width = opts?.width ?? 120;
+  const height = opts?.height ?? 80;
+
+  // Calculate max positions based on table dimensions
+  const maxPositions = calculateMaxChairPositions(width, height);
+
+  // Set all positions as available by default (0 to maxPositions-1)
+  const availablePositions =
+    opts?.availablePositions ??
+    Array.from({ length: maxPositions }, (_, i) => i);
+
   return {
     id,
     name: opts?.name ?? `T-${id}`,
     capacity: opts?.capacity ?? 4,
     x: opts?.x ?? 20,
     y: opts?.y ?? 20,
-    width: opts?.width ?? 120,
-    height: opts?.height ?? 80,
+    width,
+    height,
     rotation: opts?.rotation ?? 0,
     status: opts?.status ?? "available",
     color: opts?.color ?? "#f3f4f6",
+    availablePositions,
   };
 }
